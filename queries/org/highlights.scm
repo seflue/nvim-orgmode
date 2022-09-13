@@ -12,6 +12,7 @@
 (checkbox) @OrgTSCheckbox
 (checkbox status: (expr "-") @OrgTSCheckboxHalfChecked)
 (checkbox status: (expr "str") @OrgTSCheckboxChecked (#any-of? @OrgTSCheckboxChecked "x" "X"))
+((expr "<" @date.start) (expr ">" @date.end) (#org-is-valid-date? @date.start @date.end)) @OrgTSTimestampActive
 (block "#+begin_" @OrgTSBlock "#+end_" @OrgTSBlock)
 (block name: (expr) @OrgTSBlock)
 (block end_name: (expr) @OrgTSBlock)
