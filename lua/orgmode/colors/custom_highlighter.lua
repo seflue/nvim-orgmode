@@ -6,7 +6,7 @@ local MarkupHighlighter = nil
 ---@param bufnr number
 local function apply_highlights(bufnr, line)
   HideLeadingStars.apply(namespace, bufnr, line)
-  MarkupHighlighter.apply(namespace, bufnr, line)
+  -- MarkupHighlighter.apply(namespace, bufnr, line)
 end
 
 local function setup()
@@ -16,10 +16,10 @@ local function setup()
   end
   require('orgmode.colors.todo_highlighter').add_todo_keyword_highlights()
   HideLeadingStars = require('orgmode.colors.hide_leading_stars')
-  MarkupHighlighter = require('orgmode.colors.markup_highlighter')
-
-  MarkupHighlighter.setup()
-
+  -- MarkupHighlighter = require('orgmode.colors.markup_highlighter')
+  --
+  -- MarkupHighlighter.setup()
+  --
   vim.api.nvim_set_decoration_provider(namespace, {
     on_win = function(_, _, bufnr)
       return vim.bo[bufnr].filetype == 'org'
