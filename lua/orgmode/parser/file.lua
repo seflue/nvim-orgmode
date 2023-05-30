@@ -7,8 +7,7 @@ local utils = require('orgmode.utils')
 
 ---@class File
 ---@field tree table
----@field file_content string[]
----@field file_content_str string
+---@field bufnr number
 ---@field category string
 ---@field filename string
 ---@field changedtick number
@@ -16,23 +15,16 @@ local utils = require('orgmode.utils')
 ---@field sections_by_line table<number, Section>
 ---@field source_code_filetypes string[]
 ---@field is_archive_file boolean
----@field archive_location string
+---@field archive_location string | nil
 ---@field clocked_headline Section
 ---@field tags string[]
 local File = {}
 
-function File:new(tree, file_content, file_content_str, category, filename, is_archive_file)
-  local changedtick = 0
-  if filename then
-    local bufnr = vim.fn.bufnr(filename)
-    if bufnr > 0 then
-      changedtick = vim.api.nvim_buf_get_var(bufnr, 'changedtick')
-    end
-  end
+function File:new(tree, bufnr, category, filename, is_archive_file)
+  local changedtick = vim.api.nvim_buf_get_var(bufnr, 'changedtick')
   local data = {
     tree = tree,
-    file_content = file_content,
-    file_content_str = file_content_str,
+    bufnr = bufnr,
     category = category,
     filename = filename,
     changedtick = changedtick,
@@ -111,20 +103,20 @@ end
 ---@param node table
 ---@return string
 function File:get_node_text(node)
-  return utils.get_node_text(node, self.file_content)[1] or ''
+  return vim.treesitter.get_node_text(node, self.bufnr) or ''
 end
 
 ---@param node table
 ---@return string[]
 function File:get_node_text_list(node)
-  return utils.get_node_text(node, self.file_content) or {}
+  return vim.split(vim.treesitter.get_node_text(node, self.bufnr), '\n') or {}
 end
 
 ---@param query string
 ---@param node table|nil
 ---@return table[]
 function File:get_ts_matches(query, node)
-  return utils.get_ts_matches(query, node or self.tree:root(), self.file_content, self.file_content_str)
+  return utils.get_ts_matches(query, node or self.tree:root(), self.bufnr)
 end
 
 ---@return Section[]
@@ -152,28 +144,21 @@ function File.load(path, callback)
     return callback(nil)
   end
   local category = vim.fn.fnamemodify(path, ':t:r')
-  utils.readfile(
-    path,
-    vim.schedule_wrap(function(err, content)
-      if err then
-        return callback(nil)
-      end
-      return callback(File.from_content(content, category, path, ext == 'org_archive'))
-    end)
-  )
+  local bufnr = vim.fn.bufadd(path)
+  vim.fn.bufload(bufnr)
+  return callback(File.from_content(bufnr, category, path, ext == 'org_archive'))
 end
 
----@param content string|table
+---@param bufnr string|table
 ---@param category? string
 ---@param filename? string
 ---@param is_archive_file? boolean
 ---@return File|nil
-function File.from_content(content, category, filename, is_archive_file)
-  local str_content = table.concat(content, '\n')
-  local trees = LanguageTree.new(str_content, 'org', {})
+function File.from_content(bufnr, category, filename, is_archive_file)
+  local trees = LanguageTree.new(bufnr, 'org', {})
   trees = trees:parse()
   if #trees > 0 then
-    return File:new(trees[1], content, str_content, category, filename, is_archive_file)
+    return File:new(trees[1], bufnr, category, filename, is_archive_file)
   end
   return nil
 end
@@ -183,8 +168,7 @@ function File:refresh()
     return self
   end
   local bufnr = vim.fn.bufnr(self.filename)
-  local content = vim.api.nvim_buf_get_lines(bufnr, 0, -1, false)
-  local refreshed_file = File.from_content(content, self.category, self.filename, self.is_archive_file)
+  local refreshed_file = File.from_content(bufnr, self.category, self.filename, self.is_archive_file)
   refreshed_file.changedtick = vim.api.nvim_buf_get_var(bufnr, 'changedtick')
   if refreshed_file then
     return refreshed_file
@@ -295,7 +279,7 @@ function File:get_node_at_cursor(cursor)
 end
 
 ---@param id? string
----@return Section
+---@return Section | nil
 function File:get_closest_headline(id)
   local node = nil
   if not id then
@@ -353,7 +337,7 @@ function File:get_headline_lines(headline)
   return self:get_node_text_list(headline.node)
 end
 
----@return string
+---@return string | nil
 function File:get_archive_file_location()
   if self.archive_location then
     return self.archive_location

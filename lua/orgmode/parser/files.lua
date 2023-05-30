@@ -114,7 +114,7 @@ function Files.filenames()
 end
 
 ---@param file string
----@return File
+---@return File | nil
 function Files.get(file)
   local f = Files.orgfiles[file]
   if f then
@@ -123,7 +123,7 @@ function Files.get(file)
   end
 
   if vim.bo.filetype == 'org' and vim.fn.filereadable(file) == 0 then
-    return File.from_content(vim.api.nvim_buf_get_lines(0, 0, -1, false), nil, nil, false)
+    return File.from_content(vim.api.nvim_get_current_buf(), nil, nil, false)
   end
 
   return nil
@@ -134,12 +134,12 @@ function Files.get_tags()
   return Files.tags
 end
 
----@return File
+---@return File | nil
 function Files.get_current_file()
   local name = utils.current_file_path()
   local has_capture_var, is_capture = pcall(vim.api.nvim_buf_get_var, 0, 'org_capture')
   if has_capture_var and is_capture then
-    return File.from_content(vim.api.nvim_buf_get_lines(0, 0, -1, false))
+    return File.from_content(vim.api.nvim_get_current_buf())
   end
   return Files.get(name)
 end

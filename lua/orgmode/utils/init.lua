@@ -60,14 +60,14 @@ function utils.echo_warning(msg, additional_msg, store_in_history)
   return utils._echo(msg, 'WarningMsg', additional_msg, store_in_history)
 end
 
----@param msg string
+---@param msg string | table
 ---@param additional_msg? table
 ---@param store_in_history? boolean
 function utils.echo_error(msg, additional_msg, store_in_history)
   return utils._echo(msg, 'ErrorMsg', additional_msg, store_in_history)
 end
 
----@param msg string
+---@param msg string | table
 ---@param additional_msg? table
 ---@param store_in_history? boolean
 function utils.echo_info(msg, additional_msg, store_in_history)
@@ -233,21 +233,20 @@ end
 
 ---@param query string
 ---@param node table
----@param file_content string[]
----@param file_content_str string
+---@param bufnr number
 ---@return table[]
-function utils.get_ts_matches(query, node, file_content, file_content_str)
+function utils.get_ts_matches(query, node, bufnr)
   local matches = {}
   local ts_query = query_cache[query]
   if not ts_query then
     ts_query = ts.parse_query('org', query)
     query_cache[query] = ts_query
   end
-  for _, match, _ in ts_query:iter_matches(node, file_content_str) do
+  for _, match, _ in ts_query:iter_matches(node, bufnr) do
     local items = {}
     for id, matched_node in pairs(match) do
       local name = ts_query.captures[id]
-      local node_text = utils.get_node_text(matched_node, file_content)
+      local node_text = vim.split(vim.treesitter.get_node_text(matched_node, bufnr), '\n')
       items[name] = {
         node = matched_node,
         text_list = node_text,
@@ -430,7 +429,7 @@ function utils.get_named_children_nodes(file, parent_node, children_names)
   vim.tbl_map(function(node)
     if not children_names or children_names[node:type()] ~= nil then
       local text
-      local text_list = utils.get_node_text(node, file.file_content)
+      local text_list = vim.treesitter.get_node_text(node, file.bufnr)
 
       if #text_list == 0 then
         text = ''
