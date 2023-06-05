@@ -158,7 +158,7 @@ local function is_valid_markup_range(match, _, source, _)
     and end_text:sub(1, 1) ~= ' '
 end
 
-local function is_valid_hyperlink_range(match, _, source, _)
+local function is_valid_hyperlink_node(match, _, source, _)
   local start_node, end_node = get_predicate_nodes(match)
   if not start_node or not end_node then
     return
@@ -181,6 +181,28 @@ local function is_valid_hyperlink_range(match, _, source, _)
   local is_valid_start = start_text == '[['
   local is_valid_end = end_text == ']]'
   return is_valid_start and is_valid_end
+end
+
+local function is_valid_hyperlink_range(match, _, source, _)
+  local start_node, end_node = get_predicate_nodes(match)
+  if not start_node or not end_node then
+    return
+  end
+  if start_node:type() ~= 'expr' or end_node:type() ~= 'expr' then
+    return true
+  end
+
+  local start_child_count = start_node:child_count()
+  local end_child_count = end_node:child_count()
+
+  if start_child_count < 2 or end_child_count < 2 then
+    return false
+  end
+
+  return start_node:child(0):type() == '['
+    and start_node:child(1):type() == '['
+    and end_node:child(end_child_count - 2):type() == ']'
+    and end_node:child(end_child_count - 1):type() == ']'
 end
 
 local function is_valid_latex_range(match, _, source, _)
@@ -233,6 +255,7 @@ local function load_deps()
   query = ts.get_query('org', 'markup')
   vim.treesitter.query.add_predicate('org-is-valid-markup-range?', is_valid_markup_range)
   vim.treesitter.query.add_predicate('org-is-valid-hyperlink-range?', is_valid_hyperlink_range)
+  vim.treesitter.query.add_predicate('org-is-valid-hyperlink-node?', is_valid_hyperlink_node)
   vim.treesitter.query.add_predicate('org-is-valid-latex-range?', is_valid_latex_range)
 end
 
@@ -246,6 +269,9 @@ local get_matches = ts_utils.memoize_by_buf_tick(function(bufnr, line_index, roo
   for _, match, _ in query:iter_matches(root, bufnr, line_index, line_index + 1) do
     for _, node in pairs(match) do
       local char = node:type()
+      if char == 'expr' then
+        char = node:child(0):type()
+      end
       -- saves unnecessary parsing, since \\ is not used below
       if char ~= '\\' then
         local range = ts_utils.node_to_lsp_range(node)
