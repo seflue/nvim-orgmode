@@ -1054,6 +1054,8 @@ using the '+' character (Example: `file:/home/user/.config/nvim/init.lua +10`) o
 * Headline with `CUSTOM_ID` property within the same file (starts with `#`)
 * Fallback: If file path, opens the file, otherwise, tries to find the headline title.
 
+To open a hyperlink, see |orgmode-org_open_at_point|.
+
 ## Autocompletion
 By default, `omnifunc` is provided in `org` files that autocompletes these types:
 * Tags
