@@ -1,0 +1,19 @@
+{
+  "$schema": "https://raw.githubusercontent.com/LuaLS/vscode-lua/master/setting/schema.json",
+  "workspace.library": [
+    "./tests/.deps/plugins/plenary/",
+    "./tests/.deps/plugins/treesitter/"
+  ],
+  "diagnostics" : {
+    "enable": true
+    "globals": [
+      "vim"
+    ]
+  },
+  "runtime.version": "Lua 5.1",
+  "hint.enable": false,
+  "workspace.checkThirdParty": false,
+  "diagnostics.disable": [
+    "missing-fields"
+  ]
+}
