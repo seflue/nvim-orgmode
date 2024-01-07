@@ -26,7 +26,7 @@ local AgendaItem = {}
 ---@param headline_date Date single date in a headline
 ---@param headline Section
 ---@param date Date date for which item should be rendered
----@param index number
+---@param index number?
 function AgendaItem:new(headline_date, headline, date, index)
   local opts = {}
   opts.headline_date = headline_date

@@ -70,8 +70,8 @@ function Table:draw()
 end
 
 ---@param data table[]
----@param start_line number
----@param start_col number
+---@param start_line? number
+---@param start_col? number
 ---@return Table
 function Table.from_list(data, start_line, start_col)
   local tbl = Table:new({

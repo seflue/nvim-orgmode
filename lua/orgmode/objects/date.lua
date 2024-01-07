@@ -529,7 +529,7 @@ end
 
 ---@param from Date
 ---@param to Date
----@param span string
+---@param span? string
 ---@return boolean
 function Date:is_between(from, to, span)
   local f = from
@@ -549,7 +549,7 @@ function Date:is_before(date, span)
 end
 
 ---@param date Date
----@param span string
+---@param span? string
 ---@return boolean
 function Date:is_same_or_before(date, span)
   local d = date
@@ -562,14 +562,14 @@ function Date:is_same_or_before(date, span)
 end
 
 ---@param date Date
----@param span string
+---@param span? string
 ---@return boolean
 function Date:is_after(date, span)
   return not self:is_same_or_before(date, span)
 end
 
 ---@param date Date
----@param span string
+---@param span? string
 ---@return boolean
 function Date:is_same_or_after(date, span)
   local d = date

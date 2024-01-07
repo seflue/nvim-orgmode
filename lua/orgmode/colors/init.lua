@@ -9,7 +9,7 @@ function M.from_hex(hex_color)
 end
 
 ---@param hlgroup string
----@return string
+---@return string?
 function M.parse_hl_fg_color(hlgroup)
   local bg = colors.validate(vim.fn.synIDattr(vim.fn.synIDtrans(vim.fn.hlID(hlgroup)), 'bg', 'gui'))
   local fg = colors.validate(vim.fn.synIDattr(vim.fn.synIDtrans(vim.fn.hlID(hlgroup)), 'fg', 'gui'))
@@ -72,7 +72,6 @@ end
 
 ---@param highlights table[]
 ---@param clear? boolean
----@return string
 M.highlight = function(highlights, clear)
   if clear then
     vim.api.nvim_buf_clear_namespace(0, namespace, 0, -1)

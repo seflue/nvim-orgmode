@@ -126,6 +126,7 @@ if vim.env.CI == 'true' then
 end
 
 require('orgmode').setup_ts_grammar()
+---@diagnostic disable-next-line: missing-fields
 require('nvim-treesitter.configs').setup({
   ensure_installed = { 'org' },
   sync_install = true,

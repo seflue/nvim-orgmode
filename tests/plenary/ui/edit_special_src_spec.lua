@@ -1,3 +1,4 @@
+---@class Config:DefaultConfig
 local config = require('orgmode.config')
 local helpers = require('tests.plenary.ui.helpers')
 

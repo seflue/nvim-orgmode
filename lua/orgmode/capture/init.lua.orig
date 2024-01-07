@@ -213,7 +213,7 @@ function Capture:_refile_content_with_fallback(opts)
   end
 
   local destination = vim.fn.OrgmodeInput('Enter destination: ', '', self.autocomplete_refile)
-  destination = vim.split(destination, '/', {})
+  destination = vim.split(destination, '/', true)
 
   if not valid_destinations[destination[1]] then
     if not default_file then -- we know that this comes from org_refile and not org_capture_refile
@@ -239,11 +239,11 @@ function Capture:_adapt_headline_level(item, target_level, is_same_file)
   -- to another,so we need to apply demote instantly
   if target_level == 0 then
     return item:promote(item.level - 1, true, not is_same_file)
-  end
-  if item.level <= target_level then
+  elseif item.level <= target_level then
     return item:demote(target_level - item.level + 1, true, not is_same_file)
+  else
+    return item:promote(item.level - target_level - 1, true, not is_same_file)
   end
-  return item:promote(item.level - target_level - 1, true, not is_same_file)
 end
 
 ---@param opts CaptureOpts
@@ -296,15 +296,6 @@ local function remove_buffer_empty_lines(opts)
   range.end_line = end_line
 end
 
---- Checks, if we refile a heading within one file or from one file to another.
----@param opts CaptureOpts
----@return boolean
-local function check_refile_source(opts)
-  local source_file = opts.item and opts.item.file or utils.current_file_path()
-  local target_file = opts.file
-  return source_file == target_file
-end
-
 ---@private
 ---@param opts CaptureOpts
 ---@return boolean
@@ -315,9 +306,13 @@ function Capture:_refile_to(opts)
 
   local has_headline = opts.headline and opts.headline ~= ''
   local destination_file = Files.get(opts.file)
-  local target_level = 0
-  local target_line = -1
+  local target_level
+  local target_line
+<<<<<<< HEAD
   local should_adapt_headline = has_headline or (opts.item ~= nil and opts.item.level > 1)
+=======
+  local should_adapt_headline = true
+>>>>>>> 9a2f21d (squash! wip ... fix archive error)
   if has_headline then
     local headline = destination_file:find_headline_by_title(opts.headline, true)
     if not headline then
@@ -326,10 +321,17 @@ function Capture:_refile_to(opts)
     end
     target_level = headline.level
     target_line = headline.range.end_line
+  else
+    target_level = 0
+<<<<<<< HEAD
+=======
+    should_adapt_headline = opts.item ~= nil and opts.item.level > 1
+>>>>>>> 9a2f21d (squash! wip ... fix archive error)
+    target_line = -1
   end
 
+  local is_same_file = opts.file == utils.current_file_path()
   local item = opts.item
-  local is_same_file = check_refile_source(opts)
   if item and should_adapt_headline then
     -- Refiling in same file just moves the lines from one position
     -- to another,so we need to apply demote instantly

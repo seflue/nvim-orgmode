@@ -1,6 +1,5 @@
 local helpers = require('tests.plenary.ui.helpers')
 local org = require('orgmode')
-local config = require('orgmode.config')
 local Files = require('orgmode.parser.files')
 
 describe('Refile mappings', function()
@@ -22,6 +21,7 @@ describe('Refile mappings', function()
 
     source_file = Files.get_current_file()
     local item = source_file:get_closest_headline()
+    assert(item)
     org.instance().capture:_refile_to({
       file = destination_file,
       lines = source_file:get_headline_lines(item),
@@ -52,6 +52,7 @@ describe('Refile mappings', function()
 
     source_file = Files.get_current_file()
     local item = source_file:get_closest_headline()
+    assert(item)
     org.instance().capture:_refile_to({
       file = destination_file,
       lines = source_file:get_headline_lines(item),
@@ -82,6 +83,7 @@ describe('Refile mappings', function()
 
     source_file = Files.get_current_file()
     local item = source_file:get_closest_headline()
+    assert(item)
     org.instance().capture:_refile_to({
       file = destination_file,
       lines = source_file:get_headline_lines(item),

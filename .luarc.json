@@ -4,8 +4,8 @@
     "./tests/.deps/plugins/plenary/",
     "./tests/.deps/plugins/treesitter/"
   ],
-  "diagnostics" : {
-    "enable": true
+  "diagnostics": {
+    "enable": true,
     "globals": [
       "vim"
     ]

@@ -1,5 +1,4 @@
 local Files = require('orgmode.parser.files')
-local utils = require('orgmode.utils')
 local ts_org = require('orgmode.treesitter')
 local OrgPosition = require('orgmode.api.position')
 local PriorityState = require('orgmode.objects.priority_state')

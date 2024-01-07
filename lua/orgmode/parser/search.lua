@@ -10,9 +10,9 @@ local Date = require('orgmode.objects.date')
 local Search = {}
 
 ---@class Searchable
----@field props table<string, string>
+---@field props? table<string, string|number>
 ---@field tags string|string[]
----@field todo string
+---@field todo? string
 
 ---@class OrItem
 ---@field and_items AndItem[]

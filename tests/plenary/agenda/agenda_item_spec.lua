@@ -11,7 +11,7 @@ local function generate(content_line, keyword)
     '* ' .. keyword .. ' This is some content',
     content_line,
   }, '', '')
-  return parsed:get_section(1)
+  return parsed and parsed:get_section(1) or nil
 end
 
 describe('Agenda item', function()
@@ -19,12 +19,14 @@ describe('Agenda item', function()
     it('should consider inactive and closed dates invalid', function()
       local today = Date.now()
       local headline = generate(string.format('Inactive date [%s]', today:to_string()))
+      assert(headline)
       local agenda_item = AgendaItem:new(headline.dates[1], headline, today)
       assert.is.False(agenda_item.is_valid)
       assert.are.same({}, agenda_item.highlights)
       assert.are.same('', agenda_item.label)
 
       headline = generate(string.format('CLOSED: [%s]', today:to_string()))
+      assert(headline)
       agenda_item = AgendaItem:new(headline.dates[1], headline, today)
       assert.is.False(agenda_item.is_valid)
       assert.are.same({}, agenda_item.highlights)
@@ -34,6 +36,7 @@ describe('Agenda item', function()
     it('should consider non planning date only for today', function()
       local today = Date.now()
       local headline = generate(string.format('Some content <%s>', today:to_string()))
+      assert(headline)
       local agenda_item = AgendaItem:new(headline.dates[1], headline, today)
       assert.is.True(agenda_item.is_valid)
       assert.are.same({
@@ -45,12 +48,14 @@ describe('Agenda item', function()
       assert.are.same(today:format_time() .. '...... ', agenda_item.label)
 
       headline = generate(string.format('Some content <%s>', today:subtract({ day = 2 }):to_string()))
+      assert(headline)
       agenda_item = AgendaItem:new(headline.dates[1], headline, today)
       assert.is.False(agenda_item.is_valid)
       assert.are.same({}, agenda_item.highlights)
       assert.are.same('', agenda_item.label)
 
       headline = generate(string.format('Some content <%s>', today:add({ day = 2 }):to_string()))
+      assert(headline)
       agenda_item = AgendaItem:new(headline.dates[1], headline, today)
       assert.is.False(agenda_item.is_valid)
       assert.are.same({}, agenda_item.highlights)
@@ -61,6 +66,7 @@ describe('Agenda item', function()
       local today = Date.now()
       -- today
       local headline = generate(string.format('DEADLINE: <%s>', today:to_string()))
+      assert(headline)
       local agenda_item = AgendaItem:new(headline.dates[1], headline, today)
       assert.is.True(agenda_item.is_valid)
       assert.are.same({
@@ -74,6 +80,7 @@ describe('Agenda item', function()
 
       -- past
       headline = generate(string.format('DEADLINE: <%s>', today:subtract({ day = 7 }):to_string()))
+      assert(headline)
       agenda_item = AgendaItem:new(headline.dates[1], headline, today)
       assert.is.True(agenda_item.is_valid)
       assert.are.same({
@@ -87,6 +94,7 @@ describe('Agenda item', function()
 
       -- ignores past that are done
       headline = generate(string.format('DEADLINE: <%s>', today:subtract({ day = 7 }):to_string()), 'DONE')
+      assert(headline)
       agenda_item = AgendaItem:new(headline.dates[1], headline, today)
       assert.is.False(agenda_item.is_valid)
       assert.are.same({}, agenda_item.highlights)
@@ -94,6 +102,7 @@ describe('Agenda item', function()
 
       -- ignores future that are done
       headline = generate(string.format('DEADLINE: <%s>', today:add({ day = 7 }):to_string()), 'DONE')
+      assert(headline)
       agenda_item = AgendaItem:new(headline.dates[1], headline, today)
       assert.is.False(agenda_item.is_valid)
       assert.are.same({}, agenda_item.highlights)
@@ -101,6 +110,7 @@ describe('Agenda item', function()
 
       -- future without warning within the default warning days
       headline = generate(string.format('DEADLINE: <%s>', today:add({ day = 9 }):to_string()))
+      assert(headline)
       agenda_item = AgendaItem:new(headline.dates[1], headline, today)
       assert.is.True(agenda_item.is_valid)
       assert.are.same({
@@ -113,6 +123,7 @@ describe('Agenda item', function()
 
       -- future without warning within the default warning days and less than 6 days (highlights as warning)
       headline = generate(string.format('DEADLINE: <%s>', today:add({ day = 6 }):to_string()))
+      assert(headline)
       agenda_item = AgendaItem:new(headline.dates[1], headline, today)
       assert.is.True(agenda_item.is_valid)
       assert.are.same({
@@ -126,6 +137,7 @@ describe('Agenda item', function()
 
       -- future with warning within the defined warning period
       headline = generate(string.format('DEADLINE: <%s -10d>', today:add({ day = 9 }):to_string()))
+      assert(headline)
       agenda_item = AgendaItem:new(headline.dates[1], headline, today)
       assert.is.True(agenda_item.is_valid)
       assert.are.same({
@@ -138,6 +150,7 @@ describe('Agenda item', function()
 
       -- future with warning within the defined warning period and less than 6 days (highlights as warning)
       headline = generate(string.format('DEADLINE: <%s -10d>', today:add({ day = 6 }):to_string()))
+      assert(headline)
       agenda_item = AgendaItem:new(headline.dates[1], headline, today)
       assert.is.True(agenda_item.is_valid)
       assert.are.same({
@@ -151,6 +164,7 @@ describe('Agenda item', function()
 
       -- future with warning outside of defined warning period is not shown
       headline = generate(string.format('DEADLINE: <%s -7d>', today:add({ day = 8 }):to_string()))
+      assert(headline)
       agenda_item = AgendaItem:new(headline.dates[1], headline, today)
       assert.is.False(agenda_item.is_valid)
       assert.are.same({}, agenda_item.highlights)
@@ -161,6 +175,7 @@ describe('Agenda item', function()
       -- Today
       local today = Date.now()
       local headline = generate(string.format('SCHEDULED: <%s>', today:to_string()))
+      assert(headline)
       local agenda_item = AgendaItem:new(headline.dates[1], headline, today)
       assert.is.True(agenda_item.is_valid)
       assert.are.same({
@@ -174,6 +189,7 @@ describe('Agenda item', function()
 
       -- Past undone
       headline = generate(string.format('SCHEDULED: <%s>', today:subtract({ day = 7 }):to_string()))
+      assert(headline)
       agenda_item = AgendaItem:new(headline.dates[1], headline, today)
       assert.is.True(agenda_item.is_valid)
       assert.are.same({
@@ -187,6 +203,7 @@ describe('Agenda item', function()
 
       -- Past done ignored
       headline = generate(string.format('SCHEDULED: <%s>', today:subtract({ day = 7 }):to_string()), 'DONE')
+      assert(headline)
       agenda_item = AgendaItem:new(headline.dates[1], headline, today)
       assert.is.False(agenda_item.is_valid)
       assert.are.same({}, agenda_item.highlights)
@@ -194,6 +211,7 @@ describe('Agenda item', function()
 
       -- Future ignored
       headline = generate(string.format('SCHEDULED: <%s>', today:add({ day = 7 }):to_string()), 'DONE')
+      assert(headline)
       agenda_item = AgendaItem:new(headline.dates[1], headline, today)
       assert.is.False(agenda_item.is_valid)
       assert.are.same({}, agenda_item.highlights)
@@ -201,6 +219,7 @@ describe('Agenda item', function()
 
       -- Undone adjusted for today shown
       headline = generate(string.format('SCHEDULED: <%s -2d>', today:subtract({ day = 2 }):to_string()))
+      assert(headline)
       agenda_item = AgendaItem:new(headline.dates[1], headline, today)
       assert.is.True(agenda_item.is_valid)
       assert.are.same({
@@ -214,6 +233,7 @@ describe('Agenda item', function()
 
       -- Undone adjusted for today or past shown
       headline = generate(string.format('SCHEDULED: <%s -2d>', today:subtract({ day = 4 }):to_string()))
+      assert(headline)
       agenda_item = AgendaItem:new(headline.dates[1], headline, today)
       assert.is.True(agenda_item.is_valid)
       assert.are.same({
@@ -227,6 +247,7 @@ describe('Agenda item', function()
 
       -- Done adjusted for today ignored
       headline = generate(string.format('SCHEDULED: <%s -2d>', today:subtract({ day = 2 }):to_string()), 'DONE')
+      assert(headline)
       agenda_item = AgendaItem:new(headline.dates[1], headline, today)
       assert.is.False(agenda_item.is_valid)
       assert.are.same({}, agenda_item.highlights)
@@ -237,6 +258,7 @@ describe('Agenda item', function()
       local today = Date.now()
       -- Scheduled done shown by default
       local headline = generate(string.format('SCHEDULED: <%s>', today:to_string()), 'DONE')
+      assert(headline)
       local agenda_item = AgendaItem:new(headline.dates[1], headline, today)
       assert.is.True(agenda_item.is_valid)
       assert.are.same(
@@ -247,6 +269,7 @@ describe('Agenda item', function()
 
       -- Deadline done shown by default
       local headline_deadline = generate(string.format('DEADLINE: <%s>', today:to_string()), 'DONE')
+      assert(headline_deadline)
       local agenda_item_deadline = AgendaItem:new(headline_deadline.dates[1], headline_deadline, today)
       assert.is.True(agenda_item_deadline.is_valid)
       assert.are.same(
@@ -278,6 +301,7 @@ describe('Agenda item', function()
       local today = Date.now()
       -- Scheduled done shown by default
       local headline = generate(string.format('SCHEDULED: <%s>', today:to_string()), 'DONE')
+      assert(headline)
       local agenda_item = AgendaItem:new(headline.dates[1], headline, today)
       assert.is.True(agenda_item.is_valid)
       assert.are.same(
@@ -288,6 +312,7 @@ describe('Agenda item', function()
 
       -- Deadline done shown by default
       local headline_deadline = generate(string.format('DEADLINE: <%s>', today:to_string()), 'DONE')
+      assert(headline_deadline)
       local agenda_item_deadline = AgendaItem:new(headline_deadline.dates[1], headline_deadline, today)
       assert.is.True(agenda_item_deadline.is_valid)
       assert.are.same(
@@ -320,12 +345,14 @@ describe('Agenda item', function()
     it('should consider inactive and closed dates invalid', function()
       local future_day = Date.now():add({ day = 3 })
       local headline = generate(string.format('Inactive date [%s]', future_day:to_string()))
+      assert(headline)
       local agenda_item = AgendaItem:new(headline.dates[1], headline, future_day)
       assert.is.False(agenda_item.is_valid)
       assert.are.same({}, agenda_item.highlights)
       assert.are.same('', agenda_item.label)
 
       headline = generate(string.format('CLOSED: [%s]', future_day:to_string()))
+      assert(headline)
       agenda_item = AgendaItem:new(headline.dates[1], headline, future_day)
       assert.is.False(agenda_item.is_valid)
       assert.are.same({}, agenda_item.highlights)
@@ -336,6 +363,7 @@ describe('Agenda item', function()
       -- Valid for same day
       local future_day = Date.now():add({ day = 3 })
       local headline = generate(string.format('Some content <%s>', future_day:to_string()))
+      assert(headline)
       local agenda_item = AgendaItem:new(headline.dates[1], headline, future_day)
       assert.is.True(agenda_item.is_valid)
       assert.are.same({
@@ -348,6 +376,7 @@ describe('Agenda item', function()
 
       -- Invalid for any other day
       headline = generate(string.format('Some content <%s>', future_day:add({ day = 1 }):to_string()))
+      assert(headline)
       agenda_item = AgendaItem:new(headline.dates[1], headline, future_day)
       assert.is.False(agenda_item.is_valid)
       assert.are.same({}, agenda_item.highlights)
@@ -358,6 +387,7 @@ describe('Agenda item', function()
       -- Valid for same day
       local future_day = Date.now():add({ day = 3 })
       local headline = generate(string.format('DEADLINE: <%s>', future_day:to_string()))
+      assert(headline)
       local agenda_item = AgendaItem:new(headline.dates[1], headline, future_day)
       assert.is.True(agenda_item.is_valid)
       assert.are.same({
@@ -371,6 +401,7 @@ describe('Agenda item', function()
 
       -- Green highlight if it's done
       headline = generate(string.format('DEADLINE: <%s>', future_day:to_string()), 'DONE')
+      assert(headline)
       agenda_item = AgendaItem:new(headline.dates[1], headline, future_day)
       assert.is.True(agenda_item.is_valid)
       assert.are.same({
@@ -384,6 +415,7 @@ describe('Agenda item', function()
 
       -- Invalid for any other day
       headline = generate(string.format('DEADLINE: <%s>', future_day:add({ day = 1 }):to_string()))
+      assert(headline)
       agenda_item = AgendaItem:new(headline.dates[1], headline, future_day)
       assert.is.False(agenda_item.is_valid)
       assert.are.same({}, agenda_item.highlights)
@@ -394,6 +426,7 @@ describe('Agenda item', function()
       -- Valid for same day, shows as green if it's future
       local future_day = Date.now():add({ day = 3 })
       local headline = generate(string.format('SCHEDULED: <%s>', future_day:to_string()))
+      assert(headline)
       local agenda_item = AgendaItem:new(headline.dates[1], headline, future_day)
       assert.is.True(agenda_item.is_valid)
       assert.are.same({
@@ -410,6 +443,7 @@ describe('Agenda item', function()
       -- Valid for same day, shows as yellow if it's past
       local past_day = Date.now():subtract({ day = 3 })
       headline = generate(string.format('SCHEDULED: <%s>', past_day:to_string()))
+      assert(headline)
       agenda_item = AgendaItem:new(headline.dates[1], headline, past_day)
       assert.is.True(agenda_item.is_valid)
       assert.are.same({
@@ -425,6 +459,7 @@ describe('Agenda item', function()
 
       -- Invalid for any other day
       headline = generate(string.format('SCHEDULED: <%s>', future_day:add({ day = 1 }):to_string()))
+      assert(headline)
       agenda_item = AgendaItem:new(headline.dates[1], headline, future_day)
       assert.is.False(agenda_item.is_valid)
       assert.are.same({}, agenda_item.highlights)
@@ -432,6 +467,7 @@ describe('Agenda item', function()
 
       -- Invalid if it has an adjustment
       headline = generate(string.format('SCHEDULED: <%s -2d>', future_day:add({ day = 1 }):to_string()))
+      assert(headline)
       agenda_item = AgendaItem:new(headline.dates[1], headline, future_day)
       assert.is.False(agenda_item.is_valid)
       assert.are.same({}, agenda_item.highlights)
@@ -444,11 +480,13 @@ describe('Agenda item', function()
     day_with_end_time.timestamp_end = day_with_end_time.timestamp + 3600
 
     local headline = generate(string.format('SCHEDULED: <%s>', day_with_end_time:to_string()))
+    assert(headline)
     local agenda_item = AgendaItem:new(headline.dates[1], headline, day_with_end_time)
     assert.are.same('10:00-11:00 Scheduled:', agenda_item.label)
 
     local day_with_only_time = Date.now():set({ hour = 10, min = 0 })
     headline = generate(string.format('SCHEDULED: <%s>', day_with_only_time:to_string()))
+    assert(headline)
     agenda_item = AgendaItem:new(headline.dates[1], headline, day_with_only_time)
     assert.are.same('10:00...... Scheduled:', agenda_item.label)
   end)
@@ -459,15 +497,18 @@ describe('Agenda item', function()
     local range_end = range_start:add({ hour = 1 })
     local headline = generate(string.format('Some text <%s>--<%s>', range_start:to_string(), range_end:to_string()))
     local day = range_start:clone()
+    assert(headline)
     local agenda_item = AgendaItem:new(headline.dates[1], headline, day)
     assert.is.True(agenda_item.is_valid)
     assert.are.same(agenda_item.label, '13:30-14:30 ')
+    assert(headline)
     agenda_item = AgendaItem:new(headline.dates[2], headline, day)
     assert.is.False(agenda_item.is_valid)
 
     -- Time range on a single date
     local date_with_time_range = Date.from_string('2021-06-13 Sun 15:00-16:30')
     headline = generate(string.format('Some text <%s>', date_with_time_range:to_string()))
+    assert(headline)
     agenda_item = AgendaItem:new(headline.dates[1], headline, date_with_time_range)
     assert.is.True(agenda_item.is_valid)
     assert.are.same(agenda_item.label, '15:00-16:30 ')
@@ -478,19 +519,17 @@ describe('Agenda item', function()
     headline = generate(
       string.format('Some text <%s>--<%s>', date_with_time_range:to_string(), date_with_time_range_end:to_string())
     )
+    assert(headline)
     agenda_item = AgendaItem:new(headline.dates[1], headline, date_with_time_range)
     assert.is.True(agenda_item.is_valid)
     assert.are.same(agenda_item.label, '18:00-19:30 ')
   end)
 
-  local range_start = Date.from_string('2021-06-13 Sun 13:30')
-  local range_end = range_start:add({ day = 4, hour = 1 })
-  local headline = generate(string.format('Some text <%s>--<%s>', range_start:to_string(), range_end:to_string()))
-
   it('should not show scheduled DONE item if disabled in config', function()
     local future_day = Date.now():add({ day = 2 })
     -- Scheduled done shown by default
     local headline = generate(string.format('SCHEDULED: <%s>', future_day:to_string()), 'DONE')
+    assert(headline)
     local agenda_item = AgendaItem:new(headline.dates[1], headline, future_day)
     assert.is.True(agenda_item.is_valid)
     assert.are.same(
@@ -501,6 +540,7 @@ describe('Agenda item', function()
 
     -- Deadline done shown by default
     local headline_deadline = generate(string.format('DEADLINE: <%s>', future_day:to_string()), 'DONE')
+    assert(headline_deadline)
     local agenda_item_deadline = AgendaItem:new(headline_deadline.dates[1], headline_deadline, future_day)
     assert.is.True(agenda_item_deadline.is_valid)
     assert.are.same(
@@ -532,6 +572,7 @@ describe('Agenda item', function()
     local past_day = Date.now():subtract({ day = 2 })
     -- Scheduled done shown by default
     local headline = generate(string.format('SCHEDULED: <%s>', past_day:to_string()), 'DONE')
+    assert(headline)
     local agenda_item = AgendaItem:new(headline.dates[1], headline, past_day)
     assert.is.True(agenda_item.is_valid)
     assert.are.same(
@@ -542,6 +583,7 @@ describe('Agenda item', function()
 
     -- Deadline done shown by default
     local headline_deadline = generate(string.format('DEADLINE: <%s>', past_day:to_string()), 'DONE')
+    assert(headline_deadline)
     local agenda_item_deadline = AgendaItem:new(headline_deadline.dates[1], headline_deadline, past_day)
     assert.is.True(agenda_item_deadline.is_valid)
     assert.are.same(

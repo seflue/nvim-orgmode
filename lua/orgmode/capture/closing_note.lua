@@ -31,10 +31,10 @@ end
 function ClosingNote:refile()
   local content = vim.api.nvim_buf_get_lines(0, 0, -1, false)
   if content[1] and content[1]:match('#%s+') then
-    content = { unpack(content, 2) }
+    content = { table.unpack(content, 2) }
   end
   if content[1] and vim.trim(content[1]) == '' then
-    content = { unpack(content, 2) }
+    content = { table.unpack(content, 2) }
   end
   local fn = self._resolve_fn
   self._resolve_fn = nil
