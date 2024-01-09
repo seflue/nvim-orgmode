@@ -1,4 +1,4 @@
-local utils = require('orgmode.utils')
+-- for backwards compatibility
 local fs = require('orgmode.utils.fs')
 
 ---@class Url
@@ -27,7 +27,7 @@ end
 
 ---@return boolean
 function Url:is_file_headline()
-  return self:is_file() and self:get_headline() and true
+  return self:is_file() and self:get_headline() and true or false
 end
 
 function Url:is_custom_id()
@@ -36,7 +36,7 @@ end
 
 ---@return boolean
 function Url:is_file_custom_id()
-  return self:is_file() and self:get_custom_id() and true
+  return self:is_file() and self:get_custom_id() and true or false
 end
 
 ---@return boolean
@@ -64,7 +64,7 @@ end
 
 ---@return boolean
 function Url:is_internal_headline()
-  return self.str:find('^*') and true
+  return self.str:find('^*') and true or false
 end
 
 function Url:is_internal_custom_id()
