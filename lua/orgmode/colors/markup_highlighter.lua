@@ -1,5 +1,7 @@
 local config = require('orgmode.config')
 local ts_utils = require('nvim-treesitter.ts_utils')
+
+---@class Query forward declaration
 ---@type Query
 local query = nil
 
@@ -75,6 +77,8 @@ local markers = {
     type = 'latex',
   },
 }
+
+---@class TSNode forward declaration
 
 ---@param node TSNode
 ---@param source number

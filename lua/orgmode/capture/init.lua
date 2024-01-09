@@ -15,6 +15,7 @@ local Range = require('orgmode.parser.range')
 ---@field template Template?
 ---@field headline string?
 ---@field item Section?
+---@field message string?
 
 ---@class Capture
 ---@field templates Templates
@@ -384,7 +385,7 @@ function Capture.autocomplete_refile(arg_lead)
   if not arg_lead then
     return vim.tbl_keys(valid_filenames)
   end
-  local parts = vim.split(arg_lead, '/', true)
+  local parts = vim.split(arg_lead, '/', {})
 
   local selected_file = valid_filenames[parts[1] .. '/']
 

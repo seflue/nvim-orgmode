@@ -169,7 +169,7 @@ function M.parse_todo_keyword_faces(do_syn_match)
   local result = {}
 
   for name, values in pairs(config.org_todo_keyword_faces) do
-    local parts = vim.split(values, ':', true)
+    local parts = vim.split(values, ':', {})
     local hl_opts = {}
     for _, part in ipairs(parts) do
       local faces = vim.split(vim.trim(part), ' ')

@@ -41,7 +41,7 @@ function Range.from_line(lnum)
   return Range:new({ start_line = lnum, end_line = lnum })
 end
 
----@param lnum string
+---@param lnum number
 ---@return Range
 function Range.for_line_hl(lnum)
   return Range:new({ start_line = lnum, end_line = lnum, end_col = 0 })

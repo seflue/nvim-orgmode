@@ -69,6 +69,7 @@ function OrgHeadline._build_from_internal_section(section, index)
     todo_value = section.todo_keyword.value,
     all_tags = { unpack(section.tags) },
     tags = section:get_own_tags(),
+    ---@diagnostic disable-next-line: invisible
     position = OrgPosition:_build_from_internal_range(section.range),
     deadline = section:get_deadline_date(),
     scheduled = section:get_scheduled_date(),
@@ -223,6 +224,10 @@ function OrgHeadline:_do_action(action)
       return self:reload()
     end)
   end)
+end
+
+function OrgHeadline:get_section()
+  return self._section
 end
 
 return OrgHeadline

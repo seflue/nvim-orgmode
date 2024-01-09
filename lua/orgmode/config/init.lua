@@ -384,9 +384,10 @@ function Config:ts_highlights_enabled()
       return false
     end
 
-    if type(hl_module.disable) == 'table' and vim.tbl_contains(hl_module.disable, 'org') then
-      return false
-    end
+    -- cannot be table
+    --if type(hl_module.disable) == 'table' and vim.tbl_contains(hl_module.disable, 'org') then
+    --  return false
+    --end
   end
   self.ts_hl_enabled = true
   return self.ts_hl_enabled

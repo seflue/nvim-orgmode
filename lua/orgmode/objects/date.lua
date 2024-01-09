@@ -49,7 +49,7 @@ local Date = {
   end,
 }
 
----@param source table
+---@param source string|osdate
 ---@param target? table
 ---@param include_sec? boolean
 ---@return table
@@ -89,7 +89,7 @@ function Date:new(data)
   return opts
 end
 
----@param time table
+---@param time string|osdate
 ---@return Date
 function Date:from_time_table(time)
   local range_diff = self.timestamp_end and self.timestamp_end - self.timestamp or 0
@@ -132,10 +132,10 @@ function Date:clone(opts)
 end
 
 ---@param date string
----@param dayname string
+---@param dayname string?
 ---@param time string
----@param adjustments string
----@param data table
+---@param adjustments table?
+---@param data table?
 ---@return Date
 local function parse_datetime(date, dayname, time, time_end, adjustments, data)
   local date_parts = vim.split(date, '-')
@@ -151,22 +151,23 @@ local function parse_datetime(date, dayname, time, time_end, adjustments, data)
   opts.adjustments = adjustments
   if time_end then
     local time_end_parts = vim.split(time_end, ':')
-    opts.timestamp_end = os.time({
+    local timestamp = {
       year = tonumber(date_parts[1]),
       month = tonumber(date_parts[2]),
       day = tonumber(date_parts[3]),
       hour = tonumber(time_end_parts[1]),
       min = tonumber(time_end_parts[2]),
-    })
+    }
+    opts.timestamp_end = os.time(timestamp)
   end
   opts = vim.tbl_extend('force', opts, data or {})
   return Date:new(opts)
 end
 
 ---@param date string
----@param dayname string
----@param adjustments string
----@param data table
+---@param dayname string?
+---@param adjustments table
+---@param data table?
 ---@return Date
 local function parse_date(date, dayname, adjustments, data)
   local date_parts = vim.split(date, '-')
@@ -184,8 +185,11 @@ end
 ---@param data? table
 ---@return Date
 local function today(data)
+  ---@diagnostic disable-next-line: param-type-mismatch
   local opts = vim.tbl_deep_extend('force', os.date('*t', os.time()), data or {})
+  ---@diagnostic disable-next-line: inject-field
   opts.date_only = true
+  ---@diagnostic disable-next-line: param-type-mismatch
   return Date:new(opts)
 end
 
@@ -198,7 +202,9 @@ end
 ---@param data? table
 ---@return Date
 local function now(data)
+  ---@diagnostic disable-next-line: param-type-mismatch
   local opts = vim.tbl_deep_extend('force', os.date('*t', os.time()), data or {})
+  ---@diagnostic disable-next-line: param-type-mismatch
   return Date:new(opts)
 end
 
@@ -210,7 +216,7 @@ end
 
 ---@param datestr string
 ---@param opts? table
----@return Date
+---@return Date?
 local function from_string(datestr, opts)
   if not is_valid_date(datestr) then
     return nil
@@ -304,7 +310,7 @@ local function from_org_date(datestr, opts)
       range = Range:new({
         start_line = line,
         end_line = line,
-        start_col = start_date.range.end_col + 3,
+        start_col = start_date and start_date.range.end_col + 3,
         end_col = opts.range.end_col,
       }),
       related_date_range = start_date,

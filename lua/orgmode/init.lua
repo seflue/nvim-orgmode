@@ -188,7 +188,11 @@ local function cron(opts)
 end
 
 local function get_instance()
-  return instance
+  if instance then
+    return instance
+  else
+    error('Orgmode not correctly instanciated!')
+  end
 end
 
 function _G.orgmode.statusline()

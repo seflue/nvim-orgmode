@@ -3,12 +3,6 @@ local namespace = vim.api.nvim_create_namespace('org_custom_highlighter')
 local HideLeadingStars = nil
 local MarkupHighlighter = nil
 
----@param bufnr number
-local function apply_highlights(bufnr, line)
-  HideLeadingStars.apply(namespace, bufnr, line)
-  MarkupHighlighter.apply(namespace, bufnr, line)
-end
-
 local function setup()
   local ts_highlights_enabled = config:ts_highlights_enabled()
   if not ts_highlights_enabled then
@@ -25,7 +19,9 @@ local function setup()
       return vim.bo[bufnr].filetype == 'org'
     end,
     on_line = function(_, _, bufnr, line)
-      return apply_highlights(bufnr, line)
+      HideLeadingStars.apply(namespace, bufnr, line)
+      MarkupHighlighter.apply(namespace, bufnr, line)
+      return true
     end,
   })
 end

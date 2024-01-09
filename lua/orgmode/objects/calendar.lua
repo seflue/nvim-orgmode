@@ -189,7 +189,7 @@ function Calendar.backward()
 end
 
 function Calendar.cursor_right()
-  for i = 1, vim.v.count1 do
+  for _ = 1, vim.v.count1 do
     local line, col = vim.fn.line('.'), vim.fn.col('.')
     local curr_line = vim.fn.getline('.')
     local offset = curr_line:sub(col + 1, #curr_line):find('%d%d')
@@ -200,7 +200,7 @@ function Calendar.cursor_right()
 end
 
 function Calendar.cursor_left()
-  for i = 1, vim.v.count1 do
+  for _ = 1, vim.v.count1 do
     local line, col = vim.fn.line('.'), vim.fn.col('.')
     local curr_line = vim.fn.getline('.')
     local _, offset = curr_line:sub(1, col - 1):find('.*%d%d')
@@ -211,7 +211,7 @@ function Calendar.cursor_left()
 end
 
 function Calendar.cursor_up()
-  for i = 1, vim.v.count1 do
+  for _ = 1, vim.v.count1 do
     local line, col = vim.fn.line('.'), vim.fn.col('.')
     if line > 9 then
       vim.fn.cursor(line - 1, col)
@@ -235,7 +235,7 @@ function Calendar.cursor_up()
 end
 
 function Calendar.cursor_down()
-  for i = 1, vim.v.count1 do
+  for _ = 1, vim.v.count1 do
     local line, col = vim.fn.line('.'), vim.fn.col('.')
     if line <= 1 then
       vim.fn.cursor(line + 1, col)
@@ -275,8 +275,8 @@ function Calendar.get_selected_date()
   if line < 3 or not char:match('%d') then
     return utils.echo_warning('Please select valid day number.', nil, false)
   end
-  day = tonumber(day)
-  return Calendar.month:set({ day = day })
+  local day_nb = tonumber(day)
+  return Calendar.month:set({ day = day_nb })
 end
 
 function Calendar.select()

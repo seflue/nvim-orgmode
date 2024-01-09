@@ -70,7 +70,7 @@ function Templates:compile(template)
     content = table.concat(content, '\n')
   end
   content = self:_compile(content)
-  return vim.split(content, '\n', true)
+  return vim.split(content, '\n', {})
 end
 
 ---@param target string

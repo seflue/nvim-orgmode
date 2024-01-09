@@ -15,12 +15,14 @@ function OrgApi.load(name)
   Files.ensure_loaded()
   if not name then
     return vim.tbl_map(function(file)
+      ---@diagnostic disable-next-line: invisible
       return OrgFile._build_from_internal_file(file)
     end, Files.all())
   end
 
   if type(name) == 'string' then
     local file = Files.get(name)
+    ---@diagnostic disable-next-line: invisible
     return OrgFile._build_from_internal_file(file)
   end
 
@@ -28,6 +30,7 @@ function OrgApi.load(name)
     local list = {}
     for _, file in ipairs(Files.all()) do
       if file.filename == name then
+        ---@diagnostic disable-next-line: invisible
         table.insert(list, OrgFile._build_from_internal_file(file))
       end
     end

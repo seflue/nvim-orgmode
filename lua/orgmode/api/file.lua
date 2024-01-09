@@ -12,12 +12,12 @@ local OrgFile = {}
 ---@param headlines_by_id table<string, OrgHeadline>
 ---@private
 local function map_child_headlines(headline, headlines_by_id)
-  if #headline._section.sections == 0 then
+  if #headline:get_section().sections == 0 then
     return headline
   end
 
   local child_headlines = {}
-  for _, child_section in ipairs(headline._section.sections) do
+  for _, child_section in ipairs(headline:get_section().sections) do
     local child_headline = headlines_by_id[child_section.id]
     child_headline.parent = headline
     table.insert(child_headlines, child_headline)
@@ -46,6 +46,7 @@ function OrgFile._build_from_internal_file(file)
   local headlines = {}
   local headlines_by_id = {}
   for i, section in ipairs(file.sections) do
+    ---@diagnostic disable-next-line: invisible
     local headline = OrgHeadline._build_from_internal_section(section, i)
     table.insert(headlines, headline)
     headlines_by_id[section.id] = headline
