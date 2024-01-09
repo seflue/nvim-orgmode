@@ -7,6 +7,7 @@ local Link = {}
 
 ---@param str string
 function Link:init(str)
+  ---@diagnostic disable-next-line: param-type-mismatch
   local parts = vim.split(str, '][', true)
   self.url = Url.new(parts[1] or '')
   self.desc = parts[2]
