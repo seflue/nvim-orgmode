@@ -111,6 +111,7 @@ function Calendar.render()
 
   -- construct title (Month YYYY)
   local title = Calendar.month:format('%B %Y')
+  ---@cast title string
   title = string.rep(' ', math.floor((width - title:len()) / 2)) .. title
 
   -- insert whitespace before first day of month
