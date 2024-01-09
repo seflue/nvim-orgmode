@@ -19,11 +19,11 @@ local time_format = '%H:%M'
 ---@field hour number
 ---@field min number
 ---@field timestamp number
----@field timestamp_end number
+---@field timestamp_end number?
 ---@field is_dst boolean
 ---@field is_date_range_start boolean
 ---@field is_date_range_end boolean
----@field related_date_range Date
+---@field related_date_range Date?
 ---@field dayname string
 ---@field adjustments string[]
 local Date = {
@@ -316,6 +316,7 @@ local function from_org_date(datestr, opts)
       related_date_range = start_date,
     })
   )
+  ---@diagnostic disable-next-line: assign-type-mismatch
   start_date.related_date_range = end_date
 
   return { start_date, end_date }
@@ -353,7 +354,7 @@ function Date:to_wrapped_string(active)
   return string.format('%s%s%s', open, date, close)
 end
 
----@return string
+---@return string|osdate
 function Date:format_time()
   if not self:has_time() then
     return ''
@@ -382,9 +383,11 @@ function Date:adjust_end_time(value)
   if not self.timestamp_end then
     return self
   end
-  local time_end = from_string(os.date(date_format .. ' ' .. time_format, self.timestamp_end))
-  time_end = time_end:adjust(value)
-  self.timestamp_end = time_end.timestamp
+  local date = os.date(date_format .. ' ' .. time_format, self.timestamp_end)
+  ---@cast date string
+  local time_end = from_string(date)
+  time_end = time_end and time_end:adjust(value)
+  self.timestamp_end = time_end and time_end.timestamp
   return self
 end
 
@@ -475,13 +478,17 @@ end
 ---@return number
 function Date:get_isoweekday()
   local date = os.date('*t', self.timestamp)
-  return utils.convert_to_isoweekday(date.wday)
+  local wday = date.wday
+  ---@cast wday number
+  return utils.convert_to_isoweekday(wday)
 end
 
 ---@return number
 function Date:get_weekday()
   local date = os.date('*t', self.timestamp)
-  return date.wday
+  local wday = date.wday
+  ---@cast wday number
+  return wday
 end
 
 ---@param isoweekday number
@@ -601,7 +608,7 @@ function Date:is_obsolete_range_end()
   return self.is_date_range_end and self.related_date_range:is_same(self, 'day')
 end
 
----@return boolean
+---@return boolean?
 function Date:has_date_range_end()
   return self.related_date_range and self.is_date_range_start
 end
@@ -655,7 +662,7 @@ function Date:get_range_until(date)
 end
 
 ---@param format string
----@return string
+---@return string|osdate
 function Date:format(format)
   return os.date(format, self.timestamp)
 end
@@ -782,7 +789,7 @@ function Date:with_negative_adjustment()
 end
 
 ---Get repeater value (ex. +1w, .+1w, ++1w)
----@return string
+---@return string?
 function Date:get_repeater()
   if #self.adjustments == 0 then
     return nil
@@ -918,7 +925,7 @@ end
 ---@param close string
 ---@param last_match? Date
 ---@param type? string
----@return Date
+---@return Date?
 local function from_match(line, lnum, open, datetime, close, last_match, type)
   local search_from = last_match ~= nil and last_match.range.end_col or 0
   local from, to = line:find(vim.pesc(open .. datetime .. close), search_from)
