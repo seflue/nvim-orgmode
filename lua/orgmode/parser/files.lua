@@ -245,8 +245,9 @@ function Files.set_clocked_headline(headline)
 end
 
 ---@param id string
----@return Section
+---@return Section?
 function Files.get_headline_by_id(id)
+  ---@diagnostic disable-next-line: param-type-mismatch
   local parts = vim.split(id, '####', true)
   if #parts ~= 2 then
     return nil
