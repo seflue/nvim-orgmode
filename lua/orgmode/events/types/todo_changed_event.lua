@@ -1,6 +1,6 @@
 ---@class TodoChangedEvent: Event
 ---@field type string
----@field section Section
+---@field section? Section
 ---@field headline Headline
 ---@field old_todo_state? string
 ---@field is_done? boolean
@@ -8,7 +8,7 @@ local TodoChangedEvent = {
   type = 'orgmode.todo_changed',
 }
 
----@param section Section
+---@param section? Section
 ---@param headline Headline
 ---@param old_todo_state? string
 ---@param is_done? boolean
