@@ -90,6 +90,9 @@ local get_matches = ts_utils.memoize_by_buf_tick(function(bufnr)
   end
   local matches = {}
   local root = tree[1]:root()
+  if query == nil then
+    error('The treesitter query must not be nil')
+  end
   for _, match, _ in query:iter_matches(root, bufnr, 0, -1) do
     for id, node in pairs(match) do
       local range = ts_utils.node_to_lsp_range(node)
