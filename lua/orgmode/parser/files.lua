@@ -296,10 +296,10 @@ function Files.autocomplete_tags(arg_lead)
 end
 
 ---@param old_file? File
----@param new_file File
+---@param new_file? File
 function Files._check_source_blocks(old_file, new_file)
   local old_source_blocks = old_file and old_file.source_code_filetypes or {}
-  local new_source_blocks = new_file.source_code_filetypes or {}
+  local new_source_blocks = new_file and new_file.source_code_filetypes or {}
   for _, ft in ipairs(new_source_blocks) do
     if not vim.tbl_contains(old_source_blocks, ft) then
       return vim.schedule(function()
