@@ -295,7 +295,7 @@ function File:get_node_at_cursor(cursor)
   return self.tree:root():named_descendant_for_range(cursor_range[1], cursor_range[2], cursor_range[1], cursor_range[2])
 end
 
----@param id? string
+---@param id number?
 ---@return Section|nil
 function File:get_closest_headline(id)
   local node = nil
