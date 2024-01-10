@@ -114,7 +114,7 @@ function Files.filenames()
 end
 
 ---@param file string
----@return File
+---@return File?
 function Files.get(file)
   local f = Files.orgfiles[file]
   if f then
@@ -231,7 +231,7 @@ function Files.get_node_at_cursor()
   return Files.get_current_file():get_node_at_cursor()
 end
 
----@return Section
+---@return Section?
 function Files.get_clocked_headline()
   if Files.clocked_headline then
     return Files.get_headline_by_id(Files.clocked_headline)
