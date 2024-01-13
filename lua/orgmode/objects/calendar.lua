@@ -227,6 +227,7 @@ function Calendar.forward()
   Calendar.render()
   vim.fn.cursor(2, 1)
   vim.fn.search('01')
+  Calendar.render()
 end
 
 function Calendar.backward()
@@ -234,6 +235,7 @@ function Calendar.backward()
   Calendar.render()
   vim.fn.cursor(vim.fn.line('$'), 0)
   vim.fn.search([[\d\d]], 'b')
+  Calendar.render()
 end
 
 function Calendar.cursor_right()
@@ -255,6 +257,8 @@ function Calendar.cursor_right()
       vim.fn.cursor(line, col + offset)
     end
   end
+  Calendar.date = Calendar.get_selected_date()
+  Calendar.render()
 end
 
 function Calendar.cursor_left()
@@ -276,6 +280,8 @@ function Calendar.cursor_left()
       vim.fn.cursor(line, offset)
     end
   end
+  Calendar.date = Calendar.get_selected_date()
+  Calendar.render()
 end
 
 ---@param direction string
@@ -326,6 +332,8 @@ function Calendar.cursor_up()
     end
     vim.fn.cursor(line - 1, move_to)
   end
+  Calendar.date = Calendar.get_selected_date()
+  Calendar.render()
 end
 
 function Calendar.cursor_down()
@@ -365,6 +373,8 @@ function Calendar.cursor_down()
     end
     vim.fn.cursor(line + 1, move_to)
   end
+  Calendar.date = Calendar.get_selected_date()
+  Calendar.render()
 end
 
 function Calendar.reset()
