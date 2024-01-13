@@ -6,12 +6,12 @@ local config = require('orgmode.config')
 local SelState = { DAY = 0, HOUR = 1, MIN_10 = 2, MIN_5 = 3 }
 
 ---@class OrgCalendar
----@field win number
----@field buf number
+---@field win number?
+---@field buf number?
 ---@field callback function
 ---@field namespace function
----@field date OrgDate
----@field month OrgDate
+---@field date Date?
+---@field month Date
 ---@field select_state integer
 local Calendar = {
   win = nil,
@@ -231,7 +231,7 @@ function Calendar.cursor_right()
     end
     return
   end
-  for i = 1, vim.v.count1 do
+  for _ = 1, vim.v.count1 do
     local line, col = vim.fn.line('.'), vim.fn.col('.')
     local curr_line = vim.fn.getline('.')
     local offset = curr_line:sub(col + 1, #curr_line):find('%d%d')
@@ -252,7 +252,7 @@ function Calendar.cursor_left()
     end
     return
   end
-  for i = 1, vim.v.count1 do
+  for _ = 1, vim.v.count1 do
     local line, col = vim.fn.line('.'), vim.fn.col('.')
     local curr_line = vim.fn.getline('.')
     local _, offset = curr_line:sub(1, col - 1):find('.*%d%d')
@@ -278,7 +278,7 @@ function Calendar.cursor_up()
     Calendar.rerender_time()
     return
   end
-  for i = 1, vim.v.count1 do
+  for _ = 1, vim.v.count1 do
     local line, col = vim.fn.line('.'), vim.fn.col('.')
     if line > 9 then
       vim.fn.cursor(line - 1, col)
@@ -317,7 +317,7 @@ function Calendar.cursor_down()
     Calendar.rerender_time()
     return
   end
-  for i = 1, vim.v.count1 do
+  for _ = 1, vim.v.count1 do
     local line, col = vim.fn.line('.'), vim.fn.col('.')
     if line <= 1 then
       vim.fn.cursor(line + 1, col)
@@ -354,13 +354,12 @@ function Calendar.get_selected_date()
   end
   local col = vim.fn.col('.')
   local char = vim.fn.getline('.'):sub(col, col)
-  local day = vim.trim(vim.fn.expand('<cword>'))
+  local day = tonumber(vim.trim(vim.fn.expand('<cword>')))
   local line = vim.fn.line('.')
   vim.cmd([[redraw!]])
   if line < 3 or not char:match('%d') then
     return utils.echo_warning('Please select valid day number.', nil, false)
   end
-  day = tonumber(day)
   return Calendar.date:set({
     month = Calendar.month.month,
     day = day,
