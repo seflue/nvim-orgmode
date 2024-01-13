@@ -2,8 +2,10 @@ local Date = require('orgmode.objects.date')
 local utils = require('orgmode.utils')
 local Promise = require('orgmode.utils.promise')
 local config = require('orgmode.config')
-
-local SelState = { DAY = 0, HOUR = 1, MIN_10 = 2, MIN_5 = 3 }
+--
+local SelState = { DAY = 0, HOUR = 1, MIN_BIG = 2, MIN_SMALL = 3 }
+local big_minute_step = config.org_time_stamp_rounding_min_big
+local small_minute_step = config.org_time_stamp_rounding_minutes
 
 ---@class OrgCalendar
 ---@field win number?
@@ -224,9 +226,9 @@ function Calendar.cursor_right()
   if Calendar.select_state ~= SelState.DAY then
     if Calendar.select_state == SelState.HOUR then
       Calendar.set_sel_min10()
-    elseif Calendar.select_state == SelState.MIN_10 then
+    elseif Calendar.select_state == SelState.MIN_BIG then
       Calendar.set_sel_min5()
-    elseif Calendar.select_state == SelState.MIN_5 then
+    elseif Calendar.select_state == SelState.MIN_SMALL then
       Calendar.set_sel_hour()
     end
     return
@@ -245,9 +247,9 @@ function Calendar.cursor_left()
   if Calendar.select_state ~= SelState.DAY then
     if Calendar.select_state == SelState.HOUR then
       Calendar.set_sel_min5()
-    elseif Calendar.select_state == SelState.MIN_10 then
+    elseif Calendar.select_state == SelState.MIN_BIG then
       Calendar.set_sel_hour()
-    elseif Calendar.select_state == SelState.MIN_5 then
+    elseif Calendar.select_state == SelState.MIN_SMALL then
       Calendar.set_sel_min10()
     end
     return
@@ -262,16 +264,28 @@ function Calendar.cursor_left()
   end
 end
 
+---@param direction string
+---@param step_size number
+---@param current number
+---@param count number
+local function step(direction, step_size, current, count)
+  local sign = direction == 'up' and -1 or 1
+  local residual = current % step_size
+  local factor = (residual == 0 or direction == 'up') and count or count - 1
+  return factor * step_size + sign * residual
+end
+end
+
 function Calendar.cursor_up()
   if Calendar.select_state ~= SelState.DAY then
     -- to avoid unexpectedly changing the day we cache it ...
     local day = Calendar.date.day
     if Calendar.select_state == SelState.HOUR then
       Calendar.date = Calendar.date:add({ hour = vim.v.count1 })
-    elseif Calendar.select_state == SelState.MIN_10 then
-      Calendar.date = Calendar.date:add({ min = 10 * vim.v.count1 - Calendar.date.min % 10 })
-    elseif Calendar.select_state == SelState.MIN_5 then
-      Calendar.date = Calendar.date:add({ min = 5 * vim.v.count1 - Calendar.date.min % 5 })
+    elseif Calendar.select_state == SelState.MIN_BIG then
+      Calendar.date = Calendar.date:add({ min = step('up', big_minute_step, Calendar.date.min, vim.v.count1) })
+    elseif Calendar.select_state == SelState.MIN_SMALL then
+      Calendar.date = Calendar.date:add({ min = step('up', small_minute_step, Calendar.date.min, vim.v.count1) })
     end
     -- and restore the cached day after adjusting the time
     Calendar.date = Calendar.date:set({ day = day })
@@ -307,10 +321,10 @@ function Calendar.cursor_down()
     local day = Calendar.date.day
     if Calendar.select_state == SelState.HOUR then
       Calendar.date = Calendar.date:subtract({ hour = 1 * vim.v.count1 })
-    elseif Calendar.select_state == SelState.MIN_10 then
-      Calendar.date = Calendar.date:subtract({ min = 10 * vim.v.count1 + Calendar.date.min % 10 })
-    elseif Calendar.select_state == SelState.MIN_5 then
-      Calendar.date = Calendar.date:subtract({ min = 5 * vim.v.count1 + Calendar.date.min % 5 })
+    elseif Calendar.select_state == SelState.MIN_BIG then
+      Calendar.date = Calendar.date:subtract({ min = step('down', big_minute_step, Calendar.date.min, vim.v.count1) })
+    elseif Calendar.select_state == SelState.MIN_SMALL then
+      Calendar.date = Calendar.date:subtract({ min = step('down', small_minute_step, Calendar.date.min, vim.v.count1) })
     end
     -- and restore the cached day after adjusting the time
     Calendar.date = Calendar.date:set({ day = day })
@@ -471,12 +485,12 @@ function Calendar.set_sel_day()
 end
 
 function Calendar.set_sel_min10()
-  Calendar.select_state = SelState.MIN_10
+  Calendar.select_state = SelState.MIN_BIG
   vim.fn.cursor({ 9, 19 })
 end
 
 function Calendar.set_sel_min5()
-  Calendar.select_state = SelState.MIN_5
+  Calendar.select_state = SelState.MIN_SMALL
   vim.fn.cursor({ 9, 20 })
 end
 
