@@ -14,6 +14,7 @@ local small_minute_step = config.org_time_stamp_rounding_minutes
 ---@field namespace function
 ---@field date Date?
 ---@field month Date
+---@field selected Date?
 ---@field select_state integer
 local Calendar = {
   win = nil,
@@ -27,6 +28,7 @@ local Calendar = {
 }
 
 vim.cmd([[hi default OrgCalendarToday gui=reverse cterm=reverse]])
+vim.cmd([[hi default OrgCalendarSelected gui=underline cterm=underline]])
 
 ---@param data table
 function Calendar.new(data)
@@ -188,6 +190,19 @@ function Calendar.render()
     end
   end
 
+  -- highlight selected day
+  local current_date = Calendar.date
+  local is_selected_month = current_date ~= nil and current_date:is_same(Calendar.month, 'month')
+  if is_selected_month then
+    local day_formatted = current_date and current_date:format('%d')
+    for i, line in ipairs(content) do
+      local from, to = line:find('%s' .. day_formatted .. '%s')
+      if from and to then
+        vim.api.nvim_buf_add_highlight(Calendar.buf, Calendar.namespace, 'OrgCalendarSelected', i - 1, from - 1, to)
+      end
+    end
+  end
+
   vim.api.nvim_set_option_value('modifiable', false, { buf = Calendar.buf })
 end
 
@@ -273,7 +288,6 @@ local function step(direction, step_size, current, count)
   local residual = current % step_size
   local factor = (residual == 0 or direction == 'up') and count or count - 1
   return factor * step_size + sign * residual
-end
 end
 
 function Calendar.cursor_up()
@@ -449,7 +463,7 @@ end
 function Calendar.set_time()
   Calendar.date = Calendar.get_selected_date()
   Calendar.date = Calendar.date:set({ date_only = false })
-  Calendar.rerender_time()
+  Calendar.render() -- because we want to highlight the currently selected date, we have to render everything
   Calendar.set_sel_hour()
 end
 
