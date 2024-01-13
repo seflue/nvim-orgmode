@@ -178,32 +178,31 @@ function Calendar.render()
   vim.api.nvim_buf_add_highlight(Calendar.buf, Calendar.namespace, 'Comment', #content - 1, 0, -1)
 
   -- highlight the cell of the current day
-  local today = Date.today()
-  local is_today_month = today:is_same(Calendar.month, 'month')
-  if is_today_month then
-    local day_formatted = today:format('%d')
-    for i, line in ipairs(content) do
-      local from, to = line:find('%s' .. day_formatted .. '%s')
-      if from and to then
-        vim.api.nvim_buf_add_highlight(Calendar.buf, Calendar.namespace, 'OrgCalendarToday', i - 1, from - 1, to)
-      end
-    end
-  end
-
+  Calendar.highlight_day(content, Date.today(), 'OrgCalendarToday')
   -- highlight selected day
-  local current_date = Calendar.date
-  local is_selected_month = current_date ~= nil and current_date:is_same(Calendar.month, 'month')
-  if is_selected_month then
-    local day_formatted = current_date and current_date:format('%d')
-    for i, line in ipairs(content) do
-      local from, to = line:find('%s' .. day_formatted .. '%s')
-      if from and to then
-        vim.api.nvim_buf_add_highlight(Calendar.buf, Calendar.namespace, 'OrgCalendarSelected', i - 1, from - 1, to)
-      end
-    end
-  end
+  Calendar.highlight_day(content, Calendar.date, 'OrgCalendarSelected')
 
   vim.api.nvim_set_option_value('modifiable', false, { buf = Calendar.buf })
+end
+
+---@param day Date?
+---@param hl_group string
+function Calendar.highlight_day(content, day, hl_group)
+  if not day then
+    return
+  end
+
+  if not day:is_same(Calendar.month, 'month') then
+    return
+  end
+
+  local day_formatted = day:format('%d')
+  for i, line in ipairs(content) do
+    local from, to = line:find('%s' .. day_formatted .. '%s')
+    if from and to then
+      vim.api.nvim_buf_add_highlight(Calendar.buf, Calendar.namespace, hl_group, i - 1, from - 1, to)
+    end
+  end
 end
 
 function Calendar.left_pad(time_part)
