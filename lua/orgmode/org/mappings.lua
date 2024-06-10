@@ -485,6 +485,7 @@ function OrgMappings:do_promote(whole_subtree)
   local old_level = headline:get_level()
   local foldclosed = vim.fn.foldclosed('.')
   headline:promote(vim.v.count1, whole_subtree)
+  vim.cmd([[norm!zx]])
   if foldclosed > -1 and vim.fn.foldclosed('.') == -1 then
     vim.cmd([[norm!zc]])
   end
@@ -496,6 +497,7 @@ function OrgMappings:do_demote(whole_subtree)
   local old_level = headline:get_level()
   local foldclosed = vim.fn.foldclosed('.')
   headline:demote(vim.v.count1, whole_subtree)
+  vim.cmd([[norm!zx]])
   if foldclosed > -1 and vim.fn.foldclosed('.') == -1 then
     vim.cmd([[norm!zc]])
   end
@@ -767,6 +769,7 @@ function OrgMappings:move_subtree_up()
   vim.cmd(string.format(':%d,%dmove %d', range.start_line, range.end_line, target_line))
   local pos = vim.fn.getcurpos()
   vim.fn.cursor(target_line + 1, pos[2])
+  vim.cmd([[norm!zx]])
   if foldclosed > -1 and vim.fn.foldclosed('.') == -1 then
     vim.cmd([[norm!zc]])
   end
@@ -784,6 +787,7 @@ function OrgMappings:move_subtree_down()
   vim.cmd(string.format(':%d,%dmove %d', range.start_line, range.end_line, target_line))
   local pos = vim.fn.getcurpos()
   vim.fn.cursor(target_line + range.start_line - range.end_line, pos[2])
+  vim.cmd([[norm!zx]])
   if foldclosed > -1 and vim.fn.foldclosed('.') == -1 then
     vim.cmd([[norm!zc]])
   end
