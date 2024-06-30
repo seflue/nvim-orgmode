@@ -127,6 +127,8 @@ local DefaultConfig = {
       org_note_show_help = 'g?',
     },
     org = {
+      org_agenda_file_to_front = '<prefix>[',
+      org_remove_file = '<prefix>]',
       org_refile = '<prefix>r',
       org_timestamp_up_day = '<S-UP>',
       org_timestamp_down_day = '<S-DOWN>',
