@@ -16,6 +16,8 @@ local Babel = require('orgmode.babel')
 local Promise = require('orgmode.utils.promise')
 local Input = require('orgmode.ui.input')
 local Footnote = require('orgmode.objects.footnote')
+local ListItem = require('orgmode.files.elements.listitem')
+local OrgApi = require('orgmode.api')
 
 ---@class OrgMappings
 ---@field capture OrgCapture
@@ -37,6 +39,23 @@ function OrgMappings:new(data)
   setmetatable(opts, self)
   self.__index = self
   return opts
+end
+
+function OrgMappings:add_to_agenda_files()
+  if vim.bo.filetype ~= 'org' then
+    error('Not an org buffer.')
+  end
+  local name = vim.api.nvim_buf_get_name(0)
+  self.files:load_file(name)
+end
+
+function OrgMappings:remove_from_agenda_files()
+  --if vim.bo.filetype ~= 'org' then
+  --  error('Not an org buffer.')
+  --end
+  --local name = vim.api.nvim_buf_get_name(0)
+  -- TODO implement
+  error('org-remove-file is not implemented yet')
 end
 
 -- TODO:
