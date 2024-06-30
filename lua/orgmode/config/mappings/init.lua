@@ -158,6 +158,14 @@ return {
     ),
   },
   org = {
+    org_agenda_file_to_front = m.action(
+      'org_mappings.add_to_agenda_files',
+      { opts = { desc = 'org load file' }, help_desc = 'Add current file to agenda files' }
+    ),
+    org_remove_file = m.action(
+      'org_mappings.remove_from_agenda_files',
+      { opts = { desc = 'org unload file' }, help_desc = 'Add current file to agenda files' }
+    ),
     org_refile = m.action(
       'capture.refile_headline_to_destination',
       { opts = { desc = 'org refile', help_desc = 'Refile headline to specific destination' } }

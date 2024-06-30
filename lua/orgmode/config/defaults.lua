@@ -127,6 +127,8 @@ local DefaultConfig = {
       org_note_kill = '<prefix>k',
     },
     org = {
+      org_agenda_file_to_front = '<prefix>[',
+      org_remove_file = '<prefix>]',
       org_refile = '<prefix>r',
       org_timestamp_up_day = '<S-UP>',
       org_timestamp_down_day = '<S-DOWN>',
