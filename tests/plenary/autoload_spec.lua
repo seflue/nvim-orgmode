@@ -2,6 +2,7 @@ local orgmode = require('orgmode')
 
 describe('Autoload', function()
   it('should autoload dependencies when requested', function()
+    ---@diagnostic disable-next-line: missing-fields
     local org = orgmode.setup({
       org_agenda_files = vim.fn.getcwd() .. '/tests/plenary/fixtures/*',
       org_default_notes_file = vim.fn.getcwd() .. '/tests/plenary/fixtures/refile.org',
