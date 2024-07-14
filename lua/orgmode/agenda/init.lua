@@ -228,6 +228,7 @@ function Agenda:goto_date()
       view:goto_date(date)
     end
     self:_render()
+    return true
   end)
 end
 
