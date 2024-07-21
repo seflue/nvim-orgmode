@@ -151,6 +151,7 @@ end
 
 ---@param cmd string
 ---@param opts? any
+---@return any?
 function Org.action(cmd, opts)
   local parts = vim.split(cmd, '.', { plain = true })
   if #parts < 2 then
