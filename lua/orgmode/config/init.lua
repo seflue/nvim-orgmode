@@ -5,6 +5,7 @@ local defaults = require('orgmode.config.defaults')
 ---@type table<string, OrgMapEntry>
 local mappings = require('orgmode.config.mappings')
 local TodoKeywords = require('orgmode.objects.todo_keywords')
+local PriorityState = require('orgmode.objects.priority_state')
 
 ---@class OrgConfig:OrgDefaultConfig
 ---@field opts table
@@ -331,12 +332,37 @@ function Config:get_inheritable_tags(headline)
   end, headline.tags)
 end
 
-function Config:get_priorities()
+function Config:get_priority_range()
   return {
-    [self.opts.org_priority_highest] = { type = 'highest', hl_group = '@org.priority.highest' },
-    [self.opts.org_priority_default] = { type = 'default', hl_group = '@org.priority.default' },
-    [self.opts.org_priority_lowest] = { type = 'lowest', hl_group = '@org.priority.lowest' },
+    highest = self.org_priority_highest,
+    default = self.org_priority_default,
+    lowest = self.org_priority_lowest,
   }
+end
+
+function Config:get_priorities()
+  local priorities = {
+    [self.opts.org_priority_highest] = { type = 'highest', hl_group = '@org.priority.highest' },
+  }
+
+  local current_prio = PriorityState:new(self.opts.org_priority_highest, self:get_priority_range())
+  while current_prio:as_num() < current_prio:default_as_num() do
+    current_prio:decrease()
+    priorities[current_prio.priority] = { type = 'high', hl_group = '@org.priority.high' }
+  end
+
+  -- we need to overwrite the default value set by the first loop
+  priorities[self.opts.org_priority_default] = { type = 'default', hl_group = '@org.priority.default' }
+
+  while current_prio:as_num() < current_prio:lowest_as_num() do
+    current_prio:decrease()
+    priorities[current_prio.priority] = { type = 'low', hl_group = '@org.priority.low' }
+  end
+
+  -- we need to overwrite the lowest value set by the second loop
+  priorities[self.opts.org_priority_lowest] = { type = 'lowest', hl_group = '@org.priority.lowest' }
+
+  return priorities
 end
 
 function Config:setup_ts_predicates()
@@ -398,6 +424,17 @@ function Config:setup_ts_predicates()
       return
     end
     metadata['injection.language'] = utils.detect_filetype(text)
+  end, { force = true })
+
+  vim.treesitter.query.add_predicate('org-is-headline-level?', function(match, _, _, predicate)
+    ---@type TSNode
+    local node = match[predicate[2]]
+    local level = tonumber(predicate[3])
+    if not node then
+      return false
+    end
+    local _, _, _, node_end_col = node:range()
+    return ((node_end_col - 1) % 8) + 1 == level
   end, { force = true })
 end
 
