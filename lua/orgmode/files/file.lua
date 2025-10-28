@@ -75,7 +75,13 @@ function OrgFile.load(filename)
     return Promise.resolve(false)
   end
 
-  bufnr = OrgFile._load_buffer(filename)
+  bufnr = vim.fn.bufadd(filename)
+
+  if bufnr == 0 then
+    return Promise.resolve(false)
+  end
+
+  vim.fn.bufload(bufnr)
 
   return Promise.resolve(OrgFile:new({
     filename = filename,
@@ -563,7 +569,8 @@ function OrgFile:bufnr()
   if bufnr > -1 and vim.api.nvim_buf_is_loaded(bufnr) then
     return bufnr
   end
-  local new_bufnr = self._load_buffer(self.filename)
+  local new_bufnr = vim.fn.bufadd(self.filename)
+  vim.fn.bufload(new_bufnr)
   self.buf = new_bufnr
   return new_bufnr
 end
