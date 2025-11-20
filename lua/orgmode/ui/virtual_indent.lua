@@ -89,19 +89,64 @@ function VirtualIndent:_get_indent_size(line, tree_has_errors)
   return 0
 end
 
+--- Optimized version that uses cached headline information to avoid redundant treesitter queries
+--- Falls back to original implementation when cached data is not available
+---@param line number 0-indexed line number
+---@param tree_has_errors boolean whether the treesitter parse tree has errors
+---@param cached_headline table|nil pre-queried headline node
+---@param cached_indent number|nil pre-calculated indent level
+---@return number indent size for the line
+function VirtualIndent:_get_indent_size_cached(line, tree_has_errors, cached_headline, cached_indent)
+  -- If no cached data available, fallback to original implementation
+  if not cached_headline or cached_indent == nil then
+    return self:_get_indent_size(line, tree_has_errors)
+  end
+
+  -- If tree has errors, fallback to the original implementation
+  if tree_has_errors then
+    return self:_get_indent_size(line, tree_has_errors)
+  end
+
+  -- Fast check: is current line a headline? (avoids treesitter query)
+  -- Headlines always have indent 0
+  local current_line_text = vim.api.nvim_buf_get_lines(self._bufnr, line, line + 1, false)[1]
+  if current_line_text and current_line_text:match('^%*+%s') then
+    return 0
+  end
+
+  -- Use cached headline information
+  local headline_line = cached_headline:start()
+  if headline_line ~= line then
+    return cached_indent
+  end
+
+  return 0
+end
+
 ---@param start_line number start line number to set the indentation, 0-based inclusive
 ---@param end_line number end line number to set the indentation, 0-based inclusive
 ---@param ignore_ts? boolean whether or not to skip the treesitter start & end lookup
 function VirtualIndent:set_indent(start_line, end_line, ignore_ts)
   ignore_ts = ignore_ts or false
+
+  -- Query headline once for the entire range
   local headline = tree_utils.closest_headline_node({ start_line + 1, 1 })
+  local cached_indent = nil
+
   if headline and not ignore_ts then
+    -- Pre-calculate indent level BEFORE modifying start_line
+    local headline_line = headline:start()
+    local _, level = headline:field('stars')[1]:end_()
+    cached_indent = level + 1
+
+    -- Adjust range to parent boundaries
     local parent = headline:parent()
     if parent then
       start_line = math.min(parent:start(), start_line)
       end_line = math.max(parent:end_(), end_line)
     end
   end
+
   if start_line > 0 then
     start_line = start_line - 1
   end
@@ -113,8 +158,10 @@ function VirtualIndent:set_indent(start_line, end_line, ignore_ts)
   end
 
   self:_delete_old_extmarks(start_line, end_line)
+
   for line = start_line, end_line do
-    local indent = self:_get_indent_size(line, tree_has_errors)
+    -- Use cached version to avoid redundant treesitter queries
+    local indent = self:_get_indent_size_cached(line, tree_has_errors, headline, cached_indent)
 
     if indent > 0 then
       -- NOTE: `ephemeral = true` is not implemented for `inline` virt_text_pos :(
