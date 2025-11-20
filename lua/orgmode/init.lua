@@ -38,6 +38,8 @@ setmetatable(Org, {
 
 function Org:new()
   require('orgmode.org.global')(self)
+  require('orgmode.profiler') -- Load profiler commands
+  require('orgmode.profiler_detailed') -- Load detailed profiler commands
   self.initialized = false
   self.setup_called = false
   self:setup_autocmds()
