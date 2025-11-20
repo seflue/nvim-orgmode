@@ -41,21 +41,14 @@ function VirtualIndent.toggle_buffer_indent_mode(bufnr)
   require('orgmode.utils').echo_info('Org-Indent mode ' .. message .. ' in current buffer')
 end
 
+--- Deletes all extmarks in the indent namespace within the given line range
+--- Uses nvim_buf_clear_namespace for efficient batch deletion
+---@param start_line number 0-indexed start line (inclusive)
+---@param end_line number 0-indexed end line (inclusive)
 function VirtualIndent:_delete_old_extmarks(start_line, end_line)
-  local ok, old_extmarks = pcall(
-    vim.api.nvim_buf_get_extmarks,
-    self._bufnr,
-    self._ns_id,
-    { start_line, 0 },
-    { end_line, 0 },
-    { type = 'virt_text' }
-  )
-  if not ok then
-    old_extmarks = {}
-  end
-  for _, ext in ipairs(old_extmarks) do
-    vim.api.nvim_buf_del_extmark(self._bufnr, self._ns_id, ext[1])
-  end
+  -- Clear all extmarks in the namespace within the range
+  -- Note: clear_namespace uses end-exclusive range, so we add 1 to end_line
+  pcall(vim.api.nvim_buf_clear_namespace, self._bufnr, self._ns_id, start_line, end_line + 1)
 end
 
 function VirtualIndent:_get_indent_size(line, tree_has_errors)
