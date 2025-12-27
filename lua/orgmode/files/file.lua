@@ -30,6 +30,7 @@ local is_nightly = vim.fn.has('nvim-0.12') > 0
 ---@field metadata OrgFileMetadata
 ---@field parser vim.treesitter.LanguageTree
 ---@field root TSNode
+---@field _load_timing? { since_last_ms: number, since_start_ms: number } Progressive loading timing data
 local OrgFile = {}
 
 local memoize = Memoize:new(OrgFile, function(self)
