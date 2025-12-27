@@ -9,7 +9,6 @@ local Hyperlink = require('orgmode.org.links.hyperlink')
 local Range = require('orgmode.files.elements.range')
 local Footnote = require('orgmode.objects.footnote')
 local Memoize = require('orgmode.utils.memoize')
-local is_nightly = vim.fn.has('nvim-0.12') > 0
 
 ---@class OrgFileMetadata
 ---@field mtime number File modified time in nanoseconds
