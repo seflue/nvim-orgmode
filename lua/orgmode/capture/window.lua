@@ -95,16 +95,53 @@ function CaptureWindow:get_bufnr()
   return self._bufnr
 end
 
+---Replace the capture buffer with `filename` in the window it occupies, and
+---keep that window open. Used when the capture should leave the user in its
+---destination instead of returning them to the previous window.
+---@param filename string
+---@param cursor? integer[] line/column to restore, clamped to the new buffer
+---@return boolean success
+function CaptureWindow:show(filename, cursor)
+  if not self._window or not self._bufnr then
+    return false
+  end
+  local winid = vim.fn.bufwinid(self._bufnr)
+  if winid == -1 then
+    return false
+  end
+
+  -- Detach before replacing the buffer. The capture buffer is bufhidden=wipe,
+  -- so loading another file into its window wipes it, and the BufWipeout
+  -- handler would re-enter the refile that is being finished here.
+  self._window({ detach_only = true })
+  self._window = nil
+  vim.bo[self._bufnr].modified = false
+
+  local ok = pcall(vim.api.nvim_win_call, winid, function()
+    vim.cmd.edit(vim.fn.fnameescape(filename))
+    -- The destination is already loaded in a buffer by the refile itself,
+    -- created through bufadd/bufload, which does not run filetype detection.
+    -- :edit reuses that buffer as it is, so detection has to be asked for.
+    vim.cmd.filetype('detect')
+    if cursor then
+      local line = math.min(cursor[1], vim.api.nvim_buf_line_count(0))
+      pcall(vim.api.nvim_win_set_cursor, winid, { line, cursor[2] })
+    end
+  end)
+
+  return ok
+end
+
 function CaptureWindow:kill()
   if self._window then
     self:_window()
     self._window = nil
-    self._bufnr = nil
-    if self._resolve_fn then
-      local fn = self._resolve_fn
-      self._resolve_fn = nil
-      fn(nil)
-    end
+  end
+  self._bufnr = nil
+  if self._resolve_fn then
+    local fn = self._resolve_fn
+    self._resolve_fn = nil
+    fn(nil)
   end
 end
 
