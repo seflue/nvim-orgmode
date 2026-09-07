@@ -74,11 +74,16 @@ function Memoize:_get_cache_for_key(memoize_key)
   -- stayed reachable through its own value for the whole session.
   local file = memoize_key.file
   local version_key = file.metadata.mtime
+  -- Every node id changes when the file is re-parsed, so results cached
+  -- against the previous tree can never be hit again. Drop them as a whole
+  -- instead of leaving a set of dead buckets behind on every edit.
+  local generation = file.root and file.root:id() or ''
   local entry = file.memoize_cache
 
-  if not entry or entry.__version ~= version_key then
+  if not entry or entry.__version ~= version_key or entry.__generation ~= generation then
     entry = {
       __version = version_key,
+      __generation = generation,
     }
     file.memoize_cache = entry
   end
