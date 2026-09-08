@@ -77,6 +77,7 @@ function Capture:open_template(template)
     template = template,
     on_open = function(capture_window)
       self._windows[capture_window.id] = capture_window
+      self:_setup_capture_write(capture_window)
       return self:setup_mappings()
     end,
     on_close = function(capture_window)
@@ -94,6 +95,21 @@ function Capture:open_template_by_shortcut(shortcut)
     return utils.echo_error('No capture template with shortcut ' .. shortcut)
   end
   return self:open_template(template)
+end
+
+---Writing a capture buffer finalizes the capture. The buffer itself is a
+---tempfile nothing ever reads, so a plain :w would be a write with no effect.
+---Uses the "show" disposition, so :w leaves the user in the destination and
+---:wq closes that one window, which is what those commands mean elsewhere.
+---@private
+---@param capture_window OrgCaptureWindow
+function Capture:_setup_capture_write(capture_window)
+  vim.api.nvim_create_autocmd('BufWriteCmd', {
+    buffer = capture_window:get_bufnr(),
+    callback = function()
+      self:refile({ disposition = 'show' })
+    end,
+  })
 end
 
 ---@param capture_window OrgCaptureWindow
@@ -120,14 +136,22 @@ function Capture:on_refile_close(capture_window)
 end
 
 ---Triggered when refiling from capture buffer
-function Capture:refile()
+---@param opts? { disposition?: 'close' | 'show' }
+---  "close" (default) closes the capture window and returns to the window that
+---  was current before it opened. "show" keeps the capture window and loads the
+---  destination into it, preserving the cursor position.
+function Capture:refile(opts)
+  opts = opts or {}
   local capture_window = self._windows[vim.b.org_capture_window_id]
-  local opts = self:_get_refile_vars(capture_window)
-  if not opts then
+  local cursor = opts.disposition == 'show' and vim.api.nvim_win_get_cursor(0) or nil
+  local refile_opts = self:_get_refile_vars(capture_window)
+  if not refile_opts then
     return
   end
+  refile_opts.disposition = opts.disposition
+  refile_opts.cursor = cursor
 
-  self:_refile_from_capture_buffer(opts)
+  self:_refile_from_capture_buffer(refile_opts)
 end
 
 ---Refile to destination from capture buffer
@@ -207,6 +231,14 @@ function Capture:_refile_from_capture_buffer(opts)
     self.on_post_refile(self, opts)
   end
   utils.echo_info(('Wrote %s'):format(destination_file.filename))
+
+  -- With the "show" disposition the capture window survives the capture and
+  -- displays the destination. This has to happen before the kill below, which
+  -- would otherwise close the window out from under it.
+  if opts.disposition == 'show' and opts.capture_window then
+    opts.capture_window:show(destination_file.filename, opts.cursor)
+  end
+
   self:kill(false, opts.capture_window.id)
   return true
 end
