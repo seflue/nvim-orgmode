@@ -131,11 +131,14 @@ function OrgFiles:unload()
 end
 
 function OrgFiles:get_clocked_headline()
-  -- TODO: Optimize
   for _, file in ipairs(self:all()) do
-    for _, headline in ipairs(file:get_headlines()) do
-      if headline:is_clocked_in() then
-        return headline
+    if not file:is_archive_file() then
+      local line = file:get_running_clock_line()
+      if line then
+        local headline = file:get_closest_headline_or_nil({ line, 0 })
+        if headline and headline:is_clocked_in() then
+          return headline
+        end
       end
     end
   end

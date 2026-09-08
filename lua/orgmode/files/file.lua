@@ -478,6 +478,27 @@ function OrgFile:get_closest_headline_or_nil(cursor)
   return Headline:new(node, self)
 end
 
+---Find the line of a running clock without parsing the file.
+---Clocking out appends `--[end] => duration` to the same line, so a running
+---clock is a CLOCK entry whose line ends after its single timestamp. Scanning
+---the raw lines avoids a treesitter parse for files that cannot hold one.
+---For a file without a buffer this sees exactly what the parser would see:
+---`_get_parser` builds the string parser from the same content. A buffer backed
+---file is read from the buffer, which is the source the parser uses there.
+---@return number | nil 1-indexed line of the running clock
+function OrgFile:get_running_clock_line()
+  local lines = self.lines
+  if self:bufnr() > -1 then
+    lines = self:_get_lines(self:bufnr())
+  end
+  for i, line in ipairs(lines) do
+    if line:find('^%s*:?[Cc][Ll][Oo][Cc][Kk]:%s*%[[^%]]*%]%s*$') then
+      return i
+    end
+  end
+  return nil
+end
+
 function OrgFile:get_node_at_cursor(cursor)
   self:parse()
   if not cursor then
