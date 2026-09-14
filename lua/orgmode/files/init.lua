@@ -19,6 +19,7 @@ local Listitem = require('orgmode.files.elements.listitem')
 ---@field files table<string, OrgFile> table with files that are part of paths
 ---@field all_files table<string, OrgFile> all loaded files, no matter if they are part of paths
 ---@field load_state 'loading' | 'loaded' | nil
+---@field load_promise? OrgPromise<OrgFiles> Promise of the load that is currently in progress
 ---@field _path_cache? string[] Result of the last path discovery, valid until the next load or unload
 local OrgFiles = {
   cached_instances = {},
@@ -56,14 +57,14 @@ end
 ---@return OrgPromise<OrgFiles>
 function OrgFiles:load(force)
   if not force and self.load_state then
-    if self.load_state == 'loading' then
-      self:ensure_loaded()
+    if self.load_state == 'loading' and self.load_promise then
+      return self.load_promise
     end
     return Promise.resolve(self)
   end
 
   self.load_state = 'loading'
-  return Promise.map(function(filename, index)
+  self.load_promise = Promise.map(function(filename, index)
     return self:load_file(filename):next(function(orgfile)
       if orgfile then
         orgfile.index = index
@@ -73,8 +74,11 @@ function OrgFiles:load(force)
     end)
   end, self:_files(true), 50):next(function()
     self.load_state = 'loaded'
+    self.load_promise = nil
     return self
   end)
+
+  return self.load_promise
 end
 
 ---@deprecated Use `load_file` with `persist` option instead
@@ -123,16 +127,18 @@ function OrgFiles:unload()
   self.all_files = {}
   self.paths = {}
   self.load_state = nil
+  self.load_promise = nil
   self._path_cache = nil
   return self
 end
 
 function OrgFiles:get_clocked_headline()
-  -- TODO: Optimize
   for _, file in ipairs(self:all()) do
-    for _, headline in ipairs(file:get_headlines()) do
-      if headline:is_clocked_in() then
-        return headline
+    if not file:is_archive_file() and file:has_running_clock_candidate() then
+      for _, headline in ipairs(file:get_headlines()) do
+        if headline:is_clocked_in() then
+          return headline
+        end
       end
     end
   end
@@ -345,7 +351,7 @@ function OrgFiles:ensure_loaded()
   if self.load_state == 'loaded' then
     return true
   end
-  vim.wait(5000, function()
+  vim.wait(20000, function()
     return self.load_state == 'loaded'
   end, 5)
 end
