@@ -37,11 +37,18 @@ function Memoize:setup()
       return self.memoized_methods[key]
     end
 
+    -- Keys are the method name and the arguments, separated by '\31' (ASCII unit
+    -- separator). Method names cannot contain it and org text does not use it:
+    --   file:get_directive('title')       -> 'get_directive\31title'
+    --   file:get_directive_properties()   -> 'get_directive_properties\31'
+    --   self:method('a', 'b')             -> 'method\31a\31b'
+    local key_prefix = key .. '\31'
+
     self.memoized_methods[key] = function(method_self, ...)
       local cache = self:_get_cache_for_key(self.key_getter(method_self))
-      local arg_key = key
+      local arg_key = key_prefix
       if select('#', ...) > 0 then
-        arg_key = key .. '_' .. table.concat({ ... }, '_')
+        arg_key = key_prefix .. table.concat({ ... }, '\31')
       end
 
       local cached_value = cache[arg_key]
