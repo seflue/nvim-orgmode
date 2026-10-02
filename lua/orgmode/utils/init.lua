@@ -442,8 +442,14 @@ function utils.open_tmp_org_window(height, split_mode, border, on_close)
     return pcall(vim.api.nvim_win_close, 0, true)
   end
 
-  return function()
+  ---@param opts? { detach_only?: boolean }
+  return function(opts)
     vim.api.nvim_create_augroup('OrgTmpWindow_' .. bufnr, { clear = true })
+    -- Detaching without closing is needed when the window outlives the
+    -- temporary buffer, e.g. when it is replaced by the capture destination.
+    if opts and opts.detach_only then
+      return
+    end
     close_win()
     if prev_winnr and vim.api.nvim_win_is_valid(prev_winnr) then
       vim.api.nvim_set_current_win(prev_winnr)
