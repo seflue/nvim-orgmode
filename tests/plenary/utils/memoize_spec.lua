@@ -1,3 +1,4 @@
+local Memoize = require('orgmode.utils.memoize')
 local OrgFile = require('orgmode.files.file')
 
 describe('Memoize', function()
@@ -59,5 +60,31 @@ describe('Memoize', function()
     end
 
     assert.are.same(baseline, buckets(file))
+  end)
+
+  it('keeps results of different methods apart', function()
+    local file = new_file({ '#+PROPERTY: header-args :results output', '* Headline 1' })
+    -- Parse first, so both calls use the same bucket
+    file:parse()
+
+    -- `get_directive` with the argument `properties` and `get_directive_properties`
+    -- without arguments must not share a cache entry
+    assert.are.same('table', type(file:get_directive_properties()))
+    assert.is_nil(file:get_directive('properties'))
+  end)
+
+  it('keeps results of different arguments apart', function()
+    local Joiner = {}
+    local memoize = Memoize:new(Joiner, function(self)
+      return self.file, 'joiner'
+    end)
+    memoize('join')
+    function Joiner:join(...)
+      return table.concat({ ... }, '+')
+    end
+    local joiner = setmetatable({ file = new_file() }, Joiner)
+
+    assert.are.same('a_b', joiner:join('a_b'))
+    assert.are.same('a+b', joiner:join('a', 'b'))
   end)
 end)
