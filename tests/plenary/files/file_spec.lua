@@ -2,6 +2,7 @@ local helpers = require('tests.plenary.helpers')
 local OrgFile = require('orgmode.files.file')
 local config = require('orgmode.config')
 local Range = require('orgmode.files.elements.range')
+local Promise = require('orgmode.utils.promise')
 
 describe('OrgFile', function()
   ---@return OrgFile
@@ -656,6 +657,24 @@ describe('OrgFile', function()
         '* Headline 1 :TAG:',
         ' ',
       }, vim.api.nvim_buf_get_lines(0, 0, -1, false))
+    end)
+  end)
+
+  describe('update', function()
+    it('returns to the current window when the edit of a file that is not current rejects', function()
+      local file = load_file_sync({ '* TODO Target' })
+      local win = vim.api.nvim_get_current_win()
+
+      local ok = pcall(function()
+        file
+          :update(function()
+            return Promise.reject('failed')
+          end)
+          :wait()
+      end)
+
+      assert.is.False(ok)
+      assert.are.same(win, vim.api.nvim_get_current_win())
     end)
   end)
 

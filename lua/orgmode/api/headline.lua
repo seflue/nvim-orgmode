@@ -27,7 +27,8 @@ local Buffers = require('orgmode.state.buffers')
 ---@field is_archived boolean headline marked with the `:ARCHIVE:` tag
 ---@field headlines OrgApiHeadline[]
 ---@field private _section OrgHeadline
----@field private _index number
+---@field private _file_version number version of the file the handle was built from
+---@field private _line_unique boolean no other headline in the file had the same line when the handle was built
 local OrgHeadline = {}
 
 ---@private
@@ -53,7 +54,7 @@ function OrgHeadline:_new(opts)
   data.parent = opts.parent
   data.headlines = opts.headlines or {}
   data._section = opts._section
-  data._index = opts._index
+  data._file_version = opts._file_version
 
   setmetatable(data, self)
   self.__index = self
@@ -61,9 +62,8 @@ function OrgHeadline:_new(opts)
 end
 
 ---@param section OrgHeadline
----@param index number
 ---@private
-function OrgHeadline._build_from_internal_headline(section, index)
+function OrgHeadline._build_from_internal_headline(section)
   local todo, _, type = section:get_todo()
   local properties = section:get_own_properties()
   return OrgHeadline:_new({
@@ -86,7 +86,7 @@ function OrgHeadline._build_from_internal_headline(section, index)
     priority = section:get_priority(),
     is_archived = section:is_archived(),
     _section = section,
-    _index = index,
+    _file_version = section.file.version,
   })
 end
 
@@ -94,7 +94,9 @@ end
 ---@return OrgApiHeadline
 function OrgHeadline:reload()
   local file = self.file:reload()
-  return file.headlines[self._index]
+  ---@diagnostic disable-next-line: invisible
+  local section = self:_find_section(file._file)
+  return file:get_headline_on_line(section:get_range().start_line)
 end
 
 --- Set tags on the headline. This replaces all current tags with provided ones
@@ -248,21 +250,111 @@ function OrgHeadline:id_get_or_create()
     return id
   end
   local org_id = require('orgmode.org.id').new()
-  self:set_property('ID', org_id)
+  self:set_property('ID', org_id):wait()
   return org_id
+end
+
+--- Find this headline in the current state of the file. Raises an error instead of guessing.
+---@param file OrgFile
+---@return OrgHeadline
+---@private
+function OrgHeadline:_find_section(file)
+  local sections = file:get_headlines()
+  local id = self.properties.id
+  if id then
+    local by_id = vim.tbl_filter(function(section)
+      return section:get_property('id', false) == id
+    end, sections)
+    if #by_id == 1 then
+      return by_id[1]
+    end
+    error(string.format('Headline "%s" not found in %s', self.line, self.file.filename), 0)
+  end
+
+  if file.version == self._file_version then
+    return file:get_closest_headline({ self.position.start_line, 0 })
+  end
+
+  local same_line = vim.tbl_filter(function(section)
+    return section:get_headline_line_content() == self.line
+  end, sections)
+  if self._line_unique and #same_line == 1 then
+    return same_line[1]
+  end
+  error(string.format('Headline "%s" not found in %s', self.line, self.file.filename), 0)
+end
+
+---@param target table
+---@param source table
+local function replace_fields(target, source)
+  for key in pairs(target) do
+    target[key] = nil
+  end
+  for key, value in pairs(source) do
+    target[key] = value
+  end
+end
+
+--- Refresh the file and headline handles of one load in place, matching headlines by index
+---@param old_file OrgApiFile
+---@param new_file OrgApiFile
+local function refresh_handles(old_file, new_file)
+  local old_headlines = old_file.headlines
+  local old_by_new = {}
+  for i, headline in ipairs(new_file.headlines) do
+    old_by_new[headline] = old_headlines[i]
+  end
+
+  replace_fields(old_file, new_file)
+  old_file.headlines = old_headlines
+  for i, headline in ipairs(new_file.headlines) do
+    local old = old_headlines[i]
+    replace_fields(old, headline)
+    old.file = old_file
+    old.parent = headline.parent and old_by_new[headline.parent]
+    old.headlines = vim.tbl_map(function(child)
+      return old_by_new[child]
+    end, headline.headlines)
+  end
 end
 
 ---@param action function
 ---@private
 function OrgHeadline:_do_action(action)
-  return org.files:update_file(self.file.filename, function()
-    local view = vim.fn.winsaveview() or {}
-    vim.fn.cursor({ self.position.start_line, 1 })
-    return Promise.resolve(action()):next(function()
-      vim.fn.winrestview(view)
-      return self:reload()
+  local file = org.files:get(self.file.filename)
+  local ok, section = pcall(self._find_section, self, file)
+  if not ok then
+    return Promise.reject(section)
+  end
+  local start_line = section:get_range().start_line
+  local all_handles_valid = true
+  for _, headline in ipairs(self.file.headlines) do
+    if headline._file_version ~= file.version then
+      all_handles_valid = false
+    end
+  end
+  return org.files
+    :update_file(self.file.filename, function()
+      local view = vim.fn.winsaveview() or {}
+      vim.fn.cursor({ start_line, 1 })
+      return Promise.resolve(action()):next(function()
+        vim.fn.winrestview(view)
+      end)
     end)
-  end)
+    :next(function()
+      local new_file = self.file:reload()
+      local updated = new_file:get_headline_on_line(start_line)
+      if not updated then
+        error(string.format('Headline "%s" is no longer on line %d', self.line, start_line), 0)
+      end
+      -- Keeps the handles usable for further actions
+      if all_handles_valid and #new_file.headlines == #self.file.headlines then
+        refresh_handles(self.file, new_file)
+      else
+        replace_fields(self, updated)
+      end
+      return self
+    end)
 end
 
 --- Get a link destination as string
@@ -277,18 +369,19 @@ end
 --- @return string
 function OrgHeadline:get_link()
   local filename = self.file.filename
+  local section = self:_find_section(org.files:get(filename))
   local bufnr = Buffers.get_buffer_by_filename(filename)
 
   if bufnr == -1 or not vim.api.nvim_buf_is_loaded(bufnr) then
     -- do remote edit
     return org.files
       :update_file(filename, function(_)
-        return org.links:get_link_to_headline(self._section)
+        return org.links:get_link_to_headline(section)
       end)
       :wait()
   end
 
-  return org.links:get_link_to_headline(self._section)
+  return org.links:get_link_to_headline(section)
 end
 
 return OrgHeadline

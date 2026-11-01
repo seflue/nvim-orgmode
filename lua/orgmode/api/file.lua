@@ -48,10 +48,15 @@ end
 function OrgFile._build_from_internal_file(file)
   local headlines = {}
   local headlines_by_id = {}
-  for i, section in ipairs(file:get_headlines()) do
-    local headline = OrgHeadline._build_from_internal_headline(section, i)
+  local line_counts = {}
+  for _, section in ipairs(file:get_headlines()) do
+    local headline = OrgHeadline._build_from_internal_headline(section)
     table.insert(headlines, headline)
     headlines_by_id[section:get_range().start_line] = headline
+    line_counts[headline.line] = (line_counts[headline.line] or 0) + 1
+  end
+  for _, headline in ipairs(headlines) do
+    headline._line_unique = line_counts[headline.line] == 1
   end
 
   local instance = OrgFile:_new({
