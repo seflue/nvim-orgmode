@@ -535,10 +535,13 @@ end
 function utils.edit_file(filename)
   local buf_not_already_loaded = vim.fn.bufexists(filename) ~= 1
   local cur_win = vim.api.nvim_get_current_win()
+  local was_modified = false
+  local was_loaded = false
 
   return {
     open = function()
       local bufnr = vim.fn.bufadd(filename) or -1
+      was_loaded = vim.api.nvim_buf_is_loaded(bufnr)
       vim.api.nvim_buf_set_var(bufnr, 'org_tmp_edit_window', true)
       vim.api.nvim_open_win(bufnr, true, {
         relative = 'editor',
@@ -552,15 +555,24 @@ function utils.edit_file(filename)
         focusable = false,
         hide = true,
       })
-      vim.api.nvim_set_option_value('swapfile', false, { buf = bufnr })
+      if not was_loaded then
+        vim.api.nvim_set_option_value('swapfile', false, { buf = bufnr })
+      end
+      was_modified = vim.bo[bufnr].modified
     end,
     close = function()
-      vim.cmd('silent! w')
+      if not was_modified then
+        vim.cmd('silent! w')
+      end
       vim.b.org_tmp_edit_window = nil
       if buf_not_already_loaded then
         vim.cmd('silent! bw!')
       else
-        vim.cmd('silent! q!')
+        local bufnr = vim.api.nvim_get_current_buf()
+        vim.api.nvim_win_close(0, true)
+        if not was_loaded and not vim.bo[bufnr].modified then
+          vim.api.nvim_buf_delete(bufnr, { unload = true })
+        end
       end
       vim.api.nvim_set_current_win(cur_win)
     end,
