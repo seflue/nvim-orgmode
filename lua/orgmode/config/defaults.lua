@@ -101,6 +101,7 @@ local DefaultConfig = {
     org_return_uses_meta_return = false,
     global_menus_as_keymaps = false,
     prefix = '<Leader>o',
+    global_prefix = nil,
     global = {
       org_agenda = '<prefix>a',
       org_capture = '<prefix>c',

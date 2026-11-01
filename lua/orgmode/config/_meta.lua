@@ -190,6 +190,7 @@
 ---@field org_return_uses_meta_return? boolean When true, `<CR>` will act as `<Leader><CR>` when applicable. Default: false
 ---@field global_menus_as_keymaps? boolean When true, agenda views and capture templates are mapped under the `org_agenda` and `org_capture` keys instead of opening a menu. Default: false
 ---@field prefix? string Default prefix for mappings. Default: '<Leader>o'
+---@field global_prefix? string Prefix for the `global` mappings. Falls back to `prefix` when not set. Default: nil
 ---@field global? OrgMappingsGlobal
 ---@field agenda? OrgMappingsAgenda
 ---@field capture? OrgMappingsCapture
