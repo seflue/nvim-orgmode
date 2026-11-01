@@ -23,6 +23,7 @@ end
 ---@field mtime number File modified time in nanoseconds
 ---@field mtime_sec number File modified time in seconds
 ---@field changedtick number
+---@field bufnr? number Buffer the content was read from, nil when it was read from disk. Its text may differ from the file on disk
 
 ---@class OrgFileOpts
 ---@field filename string
@@ -76,6 +77,7 @@ function OrgFile:new(opts)
   local this = setmetatable(data, self)
   if this.buf > 0 then
     this:_update_lines(this:_get_lines(this.buf))
+    this.metadata.bufnr = this.buf
   end
   return this
 end
@@ -125,18 +127,23 @@ function OrgFile:reload()
   end
 
   local bufnr = self:bufnr()
-  local buf_changed = false
   local file_changed = false
 
+  local stat = vim.uv.fs_stat(self.filename)
+  -- A loaded buffer is what gets parsed, so its text is the content even when the file on disk differs
   if bufnr > -1 then
     local new_changedtick = vim.api.nvim_buf_get_changedtick(bufnr)
-    buf_changed = self.metadata.changedtick ~= new_changedtick
-    if buf_changed then
+    if self.metadata.bufnr ~= bufnr or self.metadata.changedtick ~= new_changedtick then
       self:_update_lines(self:_get_lines(bufnr))
       self.metadata.changedtick = new_changedtick
     end
+    self.metadata.bufnr = bufnr
+    if stat then
+      self.metadata.mtime = stat.mtime.nsec
+      self.metadata.mtime_sec = stat.mtime.sec
+    end
+    return Promise.resolve(self)
   end
-  local stat = vim.uv.fs_stat(self.filename)
   if stat then
     local new_mtime_nsec = stat.mtime.nsec
     local new_mtime_sec = stat.mtime.sec
@@ -144,9 +151,10 @@ function OrgFile:reload()
       or self.metadata.mtime_sec ~= new_mtime_sec
   end
 
-  if file_changed and not buf_changed then
+  if file_changed or (stat and self.metadata.bufnr) then
     return utils.readfile(self.filename, { schedule = true }):next(function(lines)
       self:_update_lines(lines)
+      self.metadata.bufnr = nil
       if stat then
         self.metadata.mtime = stat.mtime.nsec
         self.metadata.mtime_sec = stat.mtime.sec
@@ -198,9 +206,11 @@ function OrgFile:is_modified()
   local bufnr = self:bufnr()
   if bufnr > -1 then
     local cur_changedtick = vim.api.nvim_buf_get_changedtick(bufnr)
-    if cur_changedtick ~= self.metadata.changedtick then
+    if self.metadata.bufnr ~= bufnr or cur_changedtick ~= self.metadata.changedtick then
       return true
     end
+  elseif self.metadata.bufnr then
+    return true
   end
   local stat = vim.uv.fs_stat(self.filename)
   if not stat then

@@ -292,6 +292,30 @@ describe('Api handles', function()
     assert.are.same('* TODO First', vim.api.nvim_buf_get_lines(0, 0, 1, false)[1])
   end)
 
+  it('reads the file from disk after its buffer is unloaded when the file changed while it was loaded', function()
+    local target = helpers.create_agenda_file({ '* TODO Old' })
+    local target_bufnr = vim.fn.bufnr(target.filename)
+    api.load(target.filename)
+    vim.wait(10)
+    vim.fn.writefile({ '* TODO New' }, target.filename)
+    api.load(target.filename)
+
+    vim.cmd('bwipeout ' .. target_bufnr)
+
+    assert.are.same('New', api.load(target.filename).headlines[1].title)
+  end)
+
+  it('reads the file from disk after its buffer is unloaded with unsaved edits discarded', function()
+    local target = helpers.create_agenda_file({ '* TODO Saved' })
+    local target_bufnr = vim.fn.bufnr(target.filename)
+    vim.api.nvim_buf_set_lines(target_bufnr, 0, -1, false, { '* TODO Unsaved' })
+    api.load(target.filename)
+
+    vim.cmd('bwipeout! ' .. target_bufnr)
+
+    assert.are.same('Saved', api.load(target.filename).headlines[1].title)
+  end)
+
   it('raises an error when the handle of one of two identical headlines outlives its headline', function()
     helpers.create_file({
       '* TODO Same',
@@ -337,6 +361,38 @@ describe('Api handles', function()
     local lines = vim.api.nvim_buf_get_lines(0, 0, -1, false)
     assert.is.Not.Nil(lines[1]:match('^%* TODO Second%s+:x:$'))
     assert.are.same('* TODO First', lines[2])
+  end)
+
+  it('acts on its own headline after the buffer is replaced with text changed on disk', function()
+    local file = helpers.create_file({ '* TODO Target' })
+    vim.api.nvim_buf_set_lines(0, 0, 0, false, { '* TODO Inserted' })
+    cur_file()
+    vim.wait(10)
+    vim.fn.writefile({ '* TODO Target', '* TODO Other' }, file.filename)
+    local headline = cur_file().headlines[2]
+    vim.cmd('silent edit!')
+
+    headline:set_tags({ 'x' }):wait()
+
+    local lines = vim.api.nvim_buf_get_lines(0, 0, -1, false)
+    assert.is.Not.Nil(lines[1]:match('^%* TODO Target%s+:x:$'))
+    assert.are.same('* TODO Other', lines[2])
+  end)
+
+  it('keeps handles of identical headlines valid after writing the unchanged file', function()
+    helpers.create_file({
+      '* TODO Same',
+      '* TODO Same',
+    })
+    local headline = cur_file().headlines[2]
+
+    vim.wait(10)
+    vim.cmd('silent write')
+
+    headline:set_tags({ 'x' }):wait()
+    local lines = vim.api.nvim_buf_get_lines(0, 0, -1, false)
+    assert.are.same('* TODO Same', lines[1])
+    assert.is.Not.Nil(lines[2]:match('^%* TODO Same%s+:x:$'))
   end)
 
   it('builds handles from the current buffer text when loading a list of files', function()
